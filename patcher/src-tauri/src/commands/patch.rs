@@ -9,6 +9,8 @@ use crate::embedded;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct FeatureConfig {
+    /// 是否启用侧边栏补丁（禁用时还原所有侧边栏相关文件）
+    pub enabled: bool,
     pub mermaid: bool,
     pub math: bool,
     #[serde(rename = "copyButton")]
@@ -24,6 +26,7 @@ pub struct FeatureConfig {
 impl Default for FeatureConfig {
     fn default() -> Self {
         Self {
+            enabled: true,
             mermaid: true,
             math: true,
             copy_button: true,
@@ -38,6 +41,8 @@ impl Default for FeatureConfig {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ManagerFeatureConfig {
+    /// 是否启用 Manager 补丁（禁用时还原所有 Manager 相关文件）
+    pub enabled: bool,
     pub mermaid: bool,
     pub math: bool,
     #[serde(rename = "copyButton")]
@@ -51,6 +56,7 @@ pub struct ManagerFeatureConfig {
 impl Default for ManagerFeatureConfig {
     fn default() -> Self {
         Self {
+            enabled: false,
             mermaid: false,
             math: false,
             copy_button: true,
@@ -94,11 +100,25 @@ pub fn install_patch(
         return Err("Manager 窗口目录不存在".to_string());
     }
 
-    // 备份原文件
-    backup_original_files(&extensions_dir, &workbench_dir)?;
+    // 根据 enabled 状态处理侧边栏补丁
+    if features.enabled {
+        // 备份并安装侧边栏补丁
+        backup_cascade_files(&extensions_dir)?;
+        write_cascade_patches(&extensions_dir, &features)?;
+    } else {
+        // 禁用时还原侧边栏文件
+        restore_cascade_files(&extensions_dir)?;
+    }
 
-    // 写入补丁文件（从嵌入资源）
-    write_embedded_patches(&extensions_dir, &workbench_dir, &features, &manager_features)?;
+    // 根据 enabled 状态处理 Manager 补丁
+    if manager_features.enabled {
+        // 备份并安装 Manager 补丁
+        backup_manager_files(&workbench_dir)?;
+        write_manager_patches(&workbench_dir, &manager_features)?;
+    } else {
+        // 禁用时还原 Manager 文件
+        restore_manager_files(&workbench_dir)?;
+    }
 
     Ok(())
 }
@@ -219,65 +239,51 @@ pub fn read_patch_config(path: String) -> Result<Option<FeatureConfig>, String> 
     Ok(Some(config))
 }
 
-/// 备份原始文件
-fn backup_original_files(extensions_dir: &PathBuf, workbench_dir: &PathBuf) -> Result<(), String> {
-    // 备份 cascade-panel.html (在 extensions_dir)
+/// 备份侧边栏相关文件
+fn backup_cascade_files(extensions_dir: &PathBuf) -> Result<(), String> {
     let cascade_panel = extensions_dir.join("cascade-panel.html");
     let cascade_backup = extensions_dir.join("cascade-panel.html.bak");
     if cascade_panel.exists() && !cascade_backup.exists() {
         fs::copy(&cascade_panel, &cascade_backup)
             .map_err(|e| format!("备份 cascade-panel.html 失败: {}", e))?;
     }
+    Ok(())
+}
 
-    // 备份 workbench-jetski-agent.html (在 workbench_dir)
+/// 备份 Manager 相关文件
+fn backup_manager_files(workbench_dir: &PathBuf) -> Result<(), String> {
     let jetski_agent = workbench_dir.join("workbench-jetski-agent.html");
     let jetski_backup = workbench_dir.join("workbench-jetski-agent.html.bak");
     if jetski_agent.exists() && !jetski_backup.exists() {
         fs::copy(&jetski_agent, &jetski_backup)
             .map_err(|e| format!("备份 workbench-jetski-agent.html 失败: {}", e))?;
     }
-
     Ok(())
 }
 
-/// 写入嵌入的补丁文件
-fn write_embedded_patches(
-    extensions_dir: &PathBuf,
-    workbench_dir: &PathBuf,
-    features: &FeatureConfig,
-    manager_features: &ManagerFeatureConfig
-) -> Result<(), String> {
-    // 侧边栏补丁目录 (extensions_dir)
+/// 写入侧边栏补丁文件
+fn write_cascade_patches(extensions_dir: &PathBuf, features: &FeatureConfig) -> Result<(), String> {
     let cascade_panel_dir = extensions_dir.join("cascade-panel");
-    
-    // Manager 补丁目录 (workbench_dir)
-    let manager_panel_dir = workbench_dir.join("manager-panel");
     
     // 先删除旧目录，确保文件结构干净
     if cascade_panel_dir.exists() {
         fs::remove_dir_all(&cascade_panel_dir)
             .map_err(|e| format!("删除旧 cascade-panel 目录失败: {}", e))?;
     }
-    if manager_panel_dir.exists() {
-        fs::remove_dir_all(&manager_panel_dir)
-            .map_err(|e| format!("删除旧 manager-panel 目录失败: {}", e))?;
-    }
     
     // 创建目录
     fs::create_dir_all(&cascade_panel_dir)
         .map_err(|e| format!("创建 cascade-panel 目录失败: {}", e))?;
-    fs::create_dir_all(&manager_panel_dir)
-        .map_err(|e| format!("创建 manager-panel 目录失败: {}", e))?;
     
-    // 写入所有补丁文件（开发模式优先使用磁盘文件）
+    // 写入侧边栏相关补丁文件
     let patch_files = embedded::get_all_files_runtime()?;
     for (relative_path, content) in patch_files {
-        // 根据文件路径决定写入哪个目录
-        let full_path = if relative_path.starts_with("manager-panel") || relative_path == "workbench-jetski-agent.html" {
-            workbench_dir.join(&relative_path)
-        } else {
-            extensions_dir.join(&relative_path)
-        };
+        // 只处理侧边栏相关文件（不包含 manager-panel 和 workbench-jetski-agent.html）
+        if relative_path.starts_with("manager-panel") || relative_path == "workbench-jetski-agent.html" {
+            continue;
+        }
+        
+        let full_path = extensions_dir.join(&relative_path);
         
         // 确保父目录存在
         if let Some(parent) = full_path.parent() {
@@ -295,6 +301,45 @@ fn write_embedded_patches(
     let cascade_config_path = cascade_panel_dir.join("config.json");
     write_config_file(&cascade_config_path, features)?;
 
+    Ok(())
+}
+
+/// 写入 Manager 补丁文件
+fn write_manager_patches(workbench_dir: &PathBuf, manager_features: &ManagerFeatureConfig) -> Result<(), String> {
+    let manager_panel_dir = workbench_dir.join("manager-panel");
+    
+    // 先删除旧目录，确保文件结构干净
+    if manager_panel_dir.exists() {
+        fs::remove_dir_all(&manager_panel_dir)
+            .map_err(|e| format!("删除旧 manager-panel 目录失败: {}", e))?;
+    }
+    
+    // 创建目录
+    fs::create_dir_all(&manager_panel_dir)
+        .map_err(|e| format!("创建 manager-panel 目录失败: {}", e))?;
+    
+    // 写入 Manager 相关补丁文件
+    let patch_files = embedded::get_all_files_runtime()?;
+    for (relative_path, content) in patch_files {
+        // 只处理 Manager 相关文件
+        if !relative_path.starts_with("manager-panel") && relative_path != "workbench-jetski-agent.html" {
+            continue;
+        }
+        
+        let full_path = workbench_dir.join(&relative_path);
+        
+        // 确保父目录存在
+        if let Some(parent) = full_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)
+                    .map_err(|e| format!("创建目录失败: {}", e))?;
+            }
+        }
+        
+        fs::write(&full_path, content)
+            .map_err(|e| format!("写入文件失败 {:?}: {}", full_path, e))?;
+    }
+    
     // 生成 Manager 配置文件
     let manager_config_path = manager_panel_dir.join("config.json");
     write_manager_config_file(&manager_config_path, manager_features)?;
@@ -335,9 +380,9 @@ fn write_manager_config_file(config_path: &PathBuf, features: &ManagerFeatureCon
     Ok(())
 }
 
-/// 恢复备份文件
-fn restore_backup_files(extensions_dir: &PathBuf, workbench_dir: &PathBuf) -> Result<(), String> {
-    // 恢复 cascade-panel.html (在 extensions_dir)
+/// 恢复侧边栏文件（禁用补丁时调用）
+fn restore_cascade_files(extensions_dir: &PathBuf) -> Result<(), String> {
+    // 恢复 cascade-panel.html
     let cascade_panel = extensions_dir.join("cascade-panel.html");
     let cascade_backup = extensions_dir.join("cascade-panel.html.bak");
     if cascade_backup.exists() {
@@ -345,7 +390,19 @@ fn restore_backup_files(extensions_dir: &PathBuf, workbench_dir: &PathBuf) -> Re
             .map_err(|e| format!("恢复 cascade-panel.html 失败: {}", e))?;
     }
 
-    // 恢复 workbench-jetski-agent.html (在 workbench_dir)
+    // 删除侧边栏补丁目录
+    let cascade_dir = extensions_dir.join("cascade-panel");
+    if cascade_dir.exists() {
+        fs::remove_dir_all(&cascade_dir)
+            .map_err(|e| format!("删除 cascade-panel 目录失败: {}", e))?;
+    }
+
+    Ok(())
+}
+
+/// 恢复 Manager 文件（禁用补丁时调用）
+fn restore_manager_files(workbench_dir: &PathBuf) -> Result<(), String> {
+    // 恢复 workbench-jetski-agent.html
     let jetski_agent = workbench_dir.join("workbench-jetski-agent.html");
     let jetski_backup = workbench_dir.join("workbench-jetski-agent.html.bak");
     if jetski_backup.exists() {
@@ -353,14 +410,7 @@ fn restore_backup_files(extensions_dir: &PathBuf, workbench_dir: &PathBuf) -> Re
             .map_err(|e| format!("恢复 workbench-jetski-agent.html 失败: {}", e))?;
     }
 
-    // 删除侧边栏补丁目录 (在 extensions_dir)
-    let cascade_dir = extensions_dir.join("cascade-panel");
-    if cascade_dir.exists() {
-        fs::remove_dir_all(&cascade_dir)
-            .map_err(|e| format!("删除 cascade-panel 目录失败: {}", e))?;
-    }
-
-    // 删除 Manager 补丁目录 (在 workbench_dir)
+    // 删除 Manager 补丁目录
     let manager_dir = workbench_dir.join("manager-panel");
     if manager_dir.exists() {
         fs::remove_dir_all(&manager_dir)
@@ -369,3 +419,11 @@ fn restore_backup_files(extensions_dir: &PathBuf, workbench_dir: &PathBuf) -> Re
 
     Ok(())
 }
+
+/// 恢复所有备份文件（完全卸载时调用）
+fn restore_backup_files(extensions_dir: &PathBuf, workbench_dir: &PathBuf) -> Result<(), String> {
+    restore_cascade_files(extensions_dir)?;
+    restore_manager_files(workbench_dir)?;
+    Ok(())
+}
+

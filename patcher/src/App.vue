@@ -38,6 +38,7 @@ const showConfirm = ref(false);
 
 // 侧边栏功能开关
 const features = ref({
+  enabled: true,
   mermaid: true,
   math: true,
   copyButton: true,
@@ -46,8 +47,9 @@ const features = ref({
   fontSize: 20,
 });
 
-// Manager 功能开关（独立配置）
+// Manager 功能开关（独立配置，默认禁用）
 const managerFeatures = ref({
+  enabled: false,
   mermaid: false,
   math: false,
   copyButton: true,
