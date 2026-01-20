@@ -1,5 +1,10 @@
 /* Manager Panel 样式 - 完全独立于 cascade-panel */
 
+/* 字体大小自定义 */
+.leading-relaxed.select-text {
+    font-size: var(--manager-panel-font-size, inherit) !important;
+}
+
 /* 复制按钮基础样式 */
 .manager-copy-btn {
     display: flex;

@@ -78,6 +78,7 @@ async function checkPatchStatus(path: string) {
   try {
     isInstalled.value = await invoke<boolean>("check_patch_status", { path });
     if (isInstalled.value) {
+      // 读取侧边栏配置
       const config = await invoke<{
         mermaid: boolean;
         math: boolean;
@@ -88,6 +89,18 @@ async function checkPatchStatus(path: string) {
       } | null>("read_patch_config", { path });
       if (config) {
         features.value = { ...features.value, ...config };
+      }
+
+      // 读取 Manager 配置
+      const managerConfig = await invoke<{
+        mermaid: boolean;
+        math: boolean;
+        copyButton: boolean;
+        fontSizeEnabled?: boolean;
+        fontSize?: number;
+      } | null>("read_manager_patch_config", { path });
+      if (managerConfig) {
+        managerFeatures.value = { ...managerFeatures.value, ...managerConfig, enabled: true };
       }
     }
   } catch (e) {

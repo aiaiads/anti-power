@@ -44,7 +44,8 @@ const getTrustedTypesPolicy = () => {
     if (typeof tt.getPolicy === 'function') {
         for (const name of [...TRUSTED_TYPES_POLICY_NAMES, ...TRUSTED_TYPES_FALLBACK_NAMES]) {
             const existing = tt.getPolicy(name);
-            if (existing && typeof existing.createScriptURL === 'function') {
+            // 优先检查 createHTML，因为渲染功能主要需要它
+            if (existing && (typeof existing.createHTML === 'function' || typeof existing.createScriptURL === 'function')) {
                 cachedPolicy = existing;
                 return cachedPolicy;
             }
@@ -90,11 +91,11 @@ const createTrustedScriptURL = (url) => {
     return url;
 };
 
-const createTrustedHTML = (html) => {
-    const policy = getTrustedTypesPolicy();
-    if (policy?.createHTML) {
+const createTrustedHTML = (html, policy) => {
+    const p = policy || getTrustedTypesPolicy();
+    if (p?.createHTML) {
         try {
-            return policy.createHTML(html);
+            return p.createHTML(html);
         } catch {
             return html;
         }
@@ -102,48 +103,91 @@ const createTrustedHTML = (html) => {
     return html;
 };
 
-export const withTrustedHTML = async (fn) => {
-    const policy = getTrustedTypesPolicy();
+/**
+ * 在 Trusted Types 环境下安全执行 DOM 操作
+ * @param {Function} fn - 要执行的函数
+ * @param {Object} externalPolicy - 可选的外部 policy 对象
+ */
+export const withTrustedHTML = async (fn, externalPolicy = null) => {
+    const policy = externalPolicy || getTrustedTypesPolicy();
     if (!policy?.createHTML) {
+        // 没有可用的 policy，直接执行（可能会失败）
         return fn();
     }
 
-    const descriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-    if (!descriptor || typeof descriptor.set !== 'function') {
-        return fn();
-    }
+    const patches = [];
+    const createHTMLWrapper = (html) => createTrustedHTML(html, policy);
 
-    const patchedDescriptor = {
-        configurable: true,
-        enumerable: descriptor.enumerable,
-        get() {
-            return descriptor.get.call(this);
-        },
-        set(value) {
-            if (typeof value === 'string') {
-                try {
-                    descriptor.set.call(this, createTrustedHTML(value));
-                    return;
-                } catch {
-                    // Fall through to original setter.
+    // Patch Element.prototype.innerHTML
+    const elementDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    if (elementDescriptor?.set) {
+        const patchedElementDescriptor = {
+            configurable: true,
+            enumerable: elementDescriptor.enumerable,
+            get() { return elementDescriptor.get?.call(this); },
+            set(value) {
+                if (typeof value === 'string') {
+                    try {
+                        elementDescriptor.set.call(this, createHTMLWrapper(value));
+                        return;
+                    } catch { /* fall through */ }
                 }
-            }
-            descriptor.set.call(this, value);
-        },
-    };
+                elementDescriptor.set.call(this, value);
+            },
+        };
+        Object.defineProperty(Element.prototype, 'innerHTML', patchedElementDescriptor);
+        patches.push(() => Object.defineProperty(Element.prototype, 'innerHTML', elementDescriptor));
+    }
 
-    Object.defineProperty(Element.prototype, 'innerHTML', patchedDescriptor);
+    // Patch SVGElement.prototype.innerHTML (如果存在)
+    if (typeof SVGElement !== 'undefined') {
+        const svgDescriptor = Object.getOwnPropertyDescriptor(SVGElement.prototype, 'innerHTML');
+        if (svgDescriptor?.set) {
+            const patchedSvgDescriptor = {
+                configurable: true,
+                enumerable: svgDescriptor.enumerable,
+                get() { return svgDescriptor.get?.call(this); },
+                set(value) {
+                    if (typeof value === 'string') {
+                        try {
+                            svgDescriptor.set.call(this, createHTMLWrapper(value));
+                            return;
+                        } catch { /* fall through */ }
+                    }
+                    svgDescriptor.set.call(this, value);
+                },
+            };
+            Object.defineProperty(SVGElement.prototype, 'innerHTML', patchedSvgDescriptor);
+            patches.push(() => Object.defineProperty(SVGElement.prototype, 'innerHTML', svgDescriptor));
+        }
+    }
+
+    // Patch Element.prototype.insertAdjacentHTML
+    const origInsertAdjacentHTML = Element.prototype.insertAdjacentHTML;
+    if (typeof origInsertAdjacentHTML === 'function') {
+        Element.prototype.insertAdjacentHTML = function (position, text) {
+            if (typeof text === 'string') {
+                try {
+                    return origInsertAdjacentHTML.call(this, position, createHTMLWrapper(text));
+                } catch { /* fall through */ }
+            }
+            return origInsertAdjacentHTML.call(this, position, text);
+        };
+        patches.push(() => { Element.prototype.insertAdjacentHTML = origInsertAdjacentHTML; });
+    }
+
     try {
         return await fn();
     } finally {
-        Object.defineProperty(Element.prototype, 'innerHTML', descriptor);
+        // 恢复所有原始方法
+        patches.forEach(restore => restore());
     }
 };
 
 const suspendAmd = () => {
     const defineFn = window.define;
     if (!defineFn || !defineFn.amd) {
-        return () => {};
+        return () => { };
     }
 
     if (amdSuspendCount === 0) {

@@ -146,23 +146,22 @@ const splitWithDelimiters = (text) => {
     return tokens;
 };
 
-const renderKatexHtml = (latex, displayMode) => {
-    if (!window.katex?.renderToString) return null;
-    return window.katex.renderToString(latex, {
-        displayMode,
-        throwOnError: false,
-        trust: true,
-    });
-};
-
-const createFragmentFromHtml = (html) => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const fragment = document.createDocumentFragment();
-    doc.body.childNodes.forEach((node) => {
-        fragment.appendChild(document.importNode(node, true));
-    });
-    return fragment;
+/**
+ * 直接使用 katex.render 渲染公式到元素
+ * 避免使用 DOMParser（会被 Trusted Types 阻止）
+ */
+const renderKatexToElement = (latex, displayMode, container) => {
+    if (!window.katex?.render) return false;
+    try {
+        window.katex.render(latex, container, {
+            displayMode,
+            throwOnError: false,
+            trust: true,
+        });
+        return true;
+    } catch {
+        return false;
+    }
 };
 
 const shouldSkipTextNode = (node) => {
@@ -197,18 +196,17 @@ const renderMathIntoElement = (el) => {
                 return;
             }
 
-            const html = renderKatexHtml(token.data, token.display);
-            if (!html) {
-                fragment.appendChild(document.createTextNode(`${token.left}${token.data}${token.right}`));
-                return;
+            // 使用 katex.render 直接渲染到 span 元素
+            const mathSpan = document.createElement('span');
+            mathSpan.className = token.display ? 'katex-display-wrapper' : 'katex-inline-wrapper';
+
+            const success = renderKatexToElement(token.data, token.display, mathSpan);
+            if (!success) {
+                // 渲染失败，保留原始文本
+                mathSpan.textContent = `${token.left}${token.data}${token.right}`;
             }
 
-            try {
-                const mathFragment = createFragmentFromHtml(html);
-                fragment.appendChild(mathFragment);
-            } catch {
-                fragment.appendChild(document.createTextNode(`${token.left}${token.data}${token.right}`));
-            }
+            fragment.appendChild(mathSpan);
         });
 
         textNode.replaceWith(fragment);
