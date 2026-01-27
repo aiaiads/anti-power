@@ -72,15 +72,15 @@ Anti-Power 以补丁方式增强 Antigravity 的侧边栏和 Manager 窗口, 提
 
 如需手动安装, 下载 Release 中的补丁压缩包 (例如 `anti-power-patches.zip`), 并参考 [manual-install.md](patcher/patches/manual-install.md).
 
-### macOS
+### macOS & Linux
 
-macOS 现支持使用 [anti-power-macOS.sh](patcher/patches/anti-power-macOS.sh) 脚本一键替换
+现支持使用 [anti-power.sh](patcher/patches/anti-power.sh) 脚本一键替换
 
 > ⚠️ **注意**: 由于权限原因, 建议直接使用 macOS 自带的 **Terminal (终端)** 运行脚本
 
 ```bash
-chmod +x ./anti-power-macOS.sh
-sudo ./anti-power-macOS.sh
+chmod +x ./anti-power.sh
+sudo ./anti-power.sh
 ```
 
 如需手动安装，请参考 [manual-install.md](patcher/patches/manual-install.md).

@@ -1,16 +1,39 @@
 #!/bin/bash
 
-# 1. chmod +x ./anti-power-macOS.sh
-# 2. sudo ./anti-power-macOS.sh
+# Usage:
+# 1. chmod +x ./anti-power.sh
+# 2. sudo ./anti-power.sh
+#
+# This script supports both macOS and Linux:
+# - macOS: /Applications/Antigravity.app/Contents/Resources/app
+# - Linux: /usr/share/antigravity/resources/app
 
 # 确保脚本在错误时停止
 set -e
 
-# 定义路径
-APP_PATH="/Applications/Antigravity.app/Contents/Resources/app"
+# 检测操作系统
+OS_TYPE=$(uname -s)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PATCHES_DIR="$SCRIPT_DIR"
 
+# 根据操作系统设置路径
+if [ "$OS_TYPE" = "Darwin" ]; then
+    APP_PATH="/Applications/Antigravity.app/Contents/Resources/app"
+    echo "检测到 macOS 系统"
+elif [ "$OS_TYPE" = "Linux" ]; then
+    APP_PATH="/usr/share/antigravity/resources/app"
+    echo "检测到 Linux 系统"
+else
+    echo "错误: 不支持的操作系统 $OS_TYPE"
+    exit 1
+fi
+
+# 检查是否以 root 权限运行
+if [ "$EUID" -ne 0 ]; then
+    echo "错误: 权限不足！"
+fi
+
+echo "Antigravity 安装路径: $APP_PATH"
 echo "开始执行 Antigravity 补丁脚本"
 
 # 检查补丁源目录是否存在

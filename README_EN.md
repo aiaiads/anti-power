@@ -72,15 +72,15 @@ For screenshots, see [screenshots.md](docs/reference/screenshots.md).
 
 For manual installation, download the patch zip file from Releases (e.g., `anti-power-patches.zip`) and refer to [manual-install.md](patcher/patches/manual-install.md).
 
-### macOS
+### macOS & Linux
 
-macOS now supports one-click replacement using the [anti-power-macOS.sh](patcher/patches/anti-power-macOS.sh) script.
+Now supports one-click replacement using the [anti-power.sh](patcher/patches/anti-power.sh) script.
 
 > ⚠️ **Note**: Due to permissions, it is recommended to run the script directly using the macOS built-in **Terminal**.
 
 ```bash
-chmod +x ./anti-power-macOS.sh
-sudo ./anti-power-macOS.sh
+chmod +x ./anti-power.sh
+sudo ./anti-power.sh
 ```
 
 For manual installation, please refer to [manual-install.md](patcher/patches/manual-install.md).
