@@ -12,6 +12,22 @@ body {
     font-size: inherit;
 }
 
+/* KaTeX 公式字体大小调整 (默认 1.21em 偏大) */
+.katex {
+    font-size: 1em;
+}
+
+.katex-display {
+    font-size: 1.1em;
+}
+
+/* 内联代码字体 - 使用等宽字体 */
+pre.inline,
+pre.inline code,
+code:not([class*="language-"]) {
+    font-family: var(--vscode-editor-font-family, 'Consolas', 'Monaco', 'Courier New', monospace) !important;
+}
+
 /* Shared copy button styling */
 .cascade-copy-btn {
     display: flex;
@@ -54,22 +70,42 @@ body {
     opacity: 1;
 }
 
-/* Content-area copy button (only visible on hover/focus) */
+/* Content-area copy button (top-right, only visible on hover/focus) */
 .cascade-copy-button {
     position: absolute;
-    top: -2px;
+    top: -1.5em;
     right: 0;
     opacity: 0;
-    z-index: 1;
+    z-index: 10;
+    pointer-events: none;
 }
 
 [data-cascade-copy-bound='1']:hover .cascade-copy-button,
 [data-cascade-copy-bound='1']:focus-within .cascade-copy-button {
     opacity: 0.7;
+    pointer-events: auto;
 }
 
 .cascade-copy-button:hover {
     opacity: 1 !important;
+}
+
+/* 右下角复制按钮 - 常驻显示 */
+.cascade-copy-bottom {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    opacity: 0.6;
+    z-index: 10;
+}
+
+.cascade-copy-bottom:hover {
+    opacity: 1;
+}
+
+.cascade-copy-bottom.copied {
+    color: #22c55e;
+    opacity: 1;
 }
 
 /* Mermaid render container */

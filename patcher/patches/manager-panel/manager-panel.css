@@ -61,22 +61,42 @@
     opacity: 1;
 }
 
-/* 内容区复制按钮 */
+/* 内容区复制按钮 - 右上角悬停显示 */
 .manager-copy-button {
     position: absolute;
     top: -2px;
     right: 0;
     opacity: 0;
     z-index: 1;
+    pointer-events: none;
 }
 
 [data-manager-copy-bound='1']:hover .manager-copy-button,
 [data-manager-copy-bound='1']:focus-within .manager-copy-button {
     opacity: 0.7;
+    pointer-events: auto;
 }
 
 .manager-copy-button:hover {
     opacity: 1 !important;
+}
+
+/* 右下角复制按钮 - 常驻显示 */
+.manager-copy-bottom {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    opacity: 0.6;
+    z-index: 1;
+}
+
+.manager-copy-bottom:hover {
+    opacity: 1;
+}
+
+.manager-copy-bottom.copied {
+    color: #22c55e;
+    opacity: 1;
 }
 
 /* 反馈区复制按钮 */
