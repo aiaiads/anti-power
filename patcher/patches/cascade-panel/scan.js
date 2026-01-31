@@ -25,6 +25,7 @@ import { renderMermaid } from './mermaid.js';
 let config = {
     mermaid: true,
     math: true,
+    mathRenderMode: 'deferred', // 'classic' | 'deferred'
     copyButton: true,
     tableColor: true,
     fontSizeEnabled: true,
@@ -152,7 +153,12 @@ const scheduleDeferredRender = (contentEl) => {
 };
 
 /**
- * 渲染单个内容区：等待完成信号或稳定后再处理
+ * 渲染单个内容区
+ * 
+ * 根据 mathRenderMode 配置决定渲染策略：
+ * - 'classic': v2.0.1 模式，立即渲染，不等待反馈按钮
+ * - 'deferred': 当前模式，等待完成信号或稳定后再处理
+ * 
  * @param {Element} contentEl
  * @param {boolean} [force=false] - true 表示跳过完成信号检查
  * @returns {void}
@@ -164,6 +170,17 @@ const renderContentNode = (contentEl, force = false) => {
         ensureContentCopyButton(contentEl);
     }
 
+    // 经典模式 (v2.0.1): 直接渲染，不走延迟队列
+    if (config.mathRenderMode === 'classic') {
+        clearDeferredRender(contentEl);
+        if (config.math) {
+            void renderMath(contentEl);
+        }
+        renderMermaidWithin(contentEl);
+        return;
+    }
+
+    // 延迟模式 (当前): 等待反馈按钮或内容稳定
     const ready = force || hasFeedbackButtons(contentEl);
     if (!ready) {
         scheduleDeferredRender(contentEl);
@@ -236,6 +253,11 @@ const flushScan = () => {
     nodes.forEach(node => {
         if (node.isConnected) scan(node);
     });
+
+    // 经典模式 (v2.0.1): 扫描结束后调用 addFeedbackCopyButtons
+    if (config.mathRenderMode === 'classic' && config.copyButton) {
+        addFeedbackCopyButtons();
+    }
 };
 
 /**
@@ -266,9 +288,15 @@ const scheduleScan = (nodes) => {
     let hasElements = false;
     const enqueue = (target) => {
         if (!target) return;
-        const scanRoot = resolveScanRoot(target);
-        if (!scanRoot) return;
-        pendingNodes.add(scanRoot);
+        // 经典模式使用简单的 enqueue 逻辑 (v2.0.1)
+        if (config.mathRenderMode === 'classic') {
+            const contentRoot = target.closest ? target.closest(CONTENT_SELECTOR) : null;
+            pendingNodes.add(contentRoot || target);
+        } else {
+            const scanRoot = resolveScanRoot(target);
+            if (!scanRoot) return;
+            pendingNodes.add(scanRoot);
+        }
         hasElements = true;
     };
 
@@ -296,6 +324,11 @@ const init = () => {
     const root = getRoot();
     scan(root);
 
+    // 经典模式 (v2.0.1): 初始化时调用 addFeedbackCopyButtons
+    if (config.mathRenderMode === 'classic' && config.copyButton) {
+        addFeedbackCopyButtons();
+    }
+
     const observer = new MutationObserver((mutations) => {
         const nodesToScan = [];
         mutations.forEach((mutation) => {
@@ -316,8 +349,8 @@ const init = () => {
 
     observer.observe(root, { childList: true, subtree: true, characterData: true });
 
-    // 如果配置为将底部按钮移动到反馈区，设置定时扫描
-    if (config.copyButton && config.copyButtonBottomPosition === 'feedback') {
+    // 延迟模式: 如果配置为将底部按钮移动到反馈区，设置定时扫描
+    if (config.mathRenderMode !== 'classic' && config.copyButton && config.copyButtonBottomPosition === 'feedback') {
         const scanFeedback = () => {
             addFeedbackCopyButtons();
         };

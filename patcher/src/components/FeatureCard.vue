@@ -17,13 +17,31 @@
         <input type="checkbox" v-model="model.mermaid" class="checkbox" :disabled="!model.enabled">
       </label>
 
-      <label class="feature-item" :class="{ 'item-disabled': !model.enabled }">
-        <div class="feature-info">
-          <span class="feature-name">数学公式渲染</span>
-          <p class="feature-desc">使用 KaTeX/MathJax 渲染 LaTeX 公式</p>
+      <div class="feature-item-group" :class="{ 'item-disabled': !model.enabled }">
+        <label class="feature-item">
+          <div class="feature-info">
+            <span class="feature-name">数学公式渲染</span>
+            <p class="feature-desc">使用 KaTeX/MathJax 渲染 LaTeX 公式</p>
+          </div>
+          <input type="checkbox" v-model="model.math" class="checkbox" :disabled="!model.enabled">
+        </label>
+        
+        <!-- 渲染模式切换 - 仅当 math 启用时显示 -->
+        <div v-if="model.math" class="sub-options math-mode-options">
+          <span class="sub-option-label">渲染模式（测试用）</span>
+          <div class="style-options">
+            <label class="style-option">
+              <input type="radio" v-model="model.mathRenderMode" value="classic" :disabled="!model.enabled">
+              <span>经典模式 (v2.0.1)</span>
+            </label>
+            <label class="style-option">
+              <input type="radio" v-model="model.mathRenderMode" value="deferred" :disabled="!model.enabled">
+              <span>延迟模式 (当前)</span>
+            </label>
+          </div>
+          <p class="mode-hint">经典模式立即渲染，延迟模式等待内容稳定后渲染</p>
         </div>
-        <input type="checkbox" v-model="model.math" class="checkbox" :disabled="!model.enabled">
-      </label>
+      </div>
 
       <!-- 一键复制按钮 -->
       <div class="feature-item-group" :class="{ 'item-disabled': !model.enabled }">
@@ -128,6 +146,7 @@ export interface FeatureFlags {
   enabled: boolean;
   mermaid: boolean;
   math: boolean;
+  mathRenderMode: 'classic' | 'deferred';
   copyButton: boolean;
   tableColor: boolean;
   fontSizeEnabled: boolean;
@@ -336,5 +355,17 @@ const copyBottomToFeedback = computed({
 .custom-text-input:focus {
   outline: none;
   border-color: var(--ag-accent);
+}
+
+/* 渲染模式提示 */
+.math-mode-options {
+  margin-top: 8px;
+}
+
+.mode-hint {
+  font-size: 11px;
+  color: var(--ag-text-secondary);
+  margin: 8px 0 0;
+  opacity: 0.8;
 }
 </style>
