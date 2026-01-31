@@ -84,7 +84,7 @@ pre:not(.inline) code,
 /* Content-area copy button (top-right, only visible on hover/focus) */
 .cascade-copy-button {
     position: absolute;
-    top: -1.5em;
+    top: 0;
     right: 0;
     opacity: 0;
     z-index: 10;
@@ -92,7 +92,8 @@ pre:not(.inline) code,
 }
 
 [data-cascade-copy-bound='1']:hover .cascade-copy-button,
-[data-cascade-copy-bound='1']:focus-within .cascade-copy-button {
+[data-cascade-copy-bound='1']:focus-within .cascade-copy-button,
+.cascade-copy-button:hover {
     opacity: 0.7;
     pointer-events: auto;
 }
@@ -101,22 +102,38 @@ pre:not(.inline) code,
     opacity: 1 !important;
 }
 
-/* 右下角复制按钮 - 常驻显示 */
+/* 右下角复制按钮 - 悬停显示，使用 absolute 定位 */
 .cascade-copy-bottom {
     position: absolute;
     bottom: 0;
     right: 0;
-    opacity: 0.6;
+    opacity: 0;
     z-index: 10;
+    pointer-events: none;
+}
+
+[data-cascade-copy-bound='1']:hover .cascade-copy-bottom,
+[data-cascade-copy-bound='1']:focus-within .cascade-copy-bottom,
+.cascade-copy-bottom:hover {
+    opacity: 0.7;
+    pointer-events: auto;
 }
 
 .cascade-copy-bottom:hover {
-    opacity: 1;
+    opacity: 1 !important;
 }
 
 .cascade-copy-bottom.copied {
     color: #22c55e;
-    opacity: 1;
+    opacity: 1 !important;
+    pointer-events: auto;
+}
+
+/* 悬停复制按钮时高亮内容区域 */
+.cascade-copy-highlight {
+    outline: 2px solid var(--vscode-focusBorder, #007fd4);
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 /* Mermaid render container */

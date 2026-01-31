@@ -80,7 +80,8 @@ pre code {
 }
 
 [data-manager-copy-bound='1']:hover .manager-copy-button,
-[data-manager-copy-bound='1']:focus-within .manager-copy-button {
+[data-manager-copy-bound='1']:focus-within .manager-copy-button,
+.manager-copy-button:hover {
     opacity: 0.7;
     pointer-events: auto;
 }
@@ -89,22 +90,31 @@ pre code {
     opacity: 1 !important;
 }
 
-/* 右下角复制按钮 - 常驻显示 */
+/* 右下角复制按钮 - 悬停显示，使用 absolute 定位 */
 .manager-copy-bottom {
     position: absolute;
     bottom: 0;
     right: 0;
-    opacity: 0.6;
+    opacity: 0;
     z-index: 1;
+    pointer-events: none;
+}
+
+[data-manager-copy-bound='1']:hover .manager-copy-bottom,
+[data-manager-copy-bound='1']:focus-within .manager-copy-bottom,
+.manager-copy-bottom:hover {
+    opacity: 0.7;
+    pointer-events: auto;
 }
 
 .manager-copy-bottom:hover {
-    opacity: 1;
+    opacity: 1 !important;
 }
 
 .manager-copy-bottom.copied {
     color: #22c55e;
-    opacity: 1;
+    opacity: 1 !important;
+    pointer-events: auto;
 }
 
 /* 反馈区复制按钮 */
@@ -114,6 +124,13 @@ pre code {
 
 .manager-feedback-copy:hover {
     opacity: 1;
+}
+
+/* 悬停复制按钮时高亮内容区域 */
+.manager-copy-highlight {
+    outline: 2px solid var(--vscode-focusBorder, #007fd4);
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 /* Mermaid 容器 */

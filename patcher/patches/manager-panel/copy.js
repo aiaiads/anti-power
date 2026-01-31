@@ -557,6 +557,23 @@ const extractFormattedText = (el) => {
         .trim();
 };
 
+// 高亮边框样式类名
+const HIGHLIGHT_CLASS = 'manager-copy-highlight';
+
+/**
+ * 绑定复制按钮的悬停高亮事件
+ * @param {HTMLElement} button - 复制按钮
+ * @param {HTMLElement} contentEl - 要高亮的内容区域
+ */
+const bindHighlightEvents = (button, contentEl) => {
+    button.addEventListener('mouseenter', () => {
+        contentEl.classList.add(HIGHLIGHT_CLASS);
+    });
+    button.addEventListener('mouseleave', () => {
+        contentEl.classList.remove(HIGHLIGHT_CLASS);
+    });
+};
+
 /**
  * 为内容区添加复制按钮
  * @param {HTMLElement} contentEl
@@ -573,14 +590,14 @@ export const ensureContentCopyButton = (contentEl) => {
 
     contentEl.setAttribute(BOUND_ATTR, '1');
 
-    // 确保容器有相对定位
+    // 确保容器有相对定位（用于按钮的 absolute 定位）
     const style = window.getComputedStyle(contentEl);
     if (style.position === 'static') {
         contentEl.style.position = 'relative';
     }
 
     // 右上角悬停按钮
-    const btn = createCopyButton(`${COPY_BTN_CLASS} ${BUTTON_CLASS}`);
+    const btn = createCopyButton(`${COPY_BTN_CLASS} ${BUTTON_CLASS}`, 'top');
     btn.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -588,10 +605,11 @@ export const ensureContentCopyButton = (contentEl) => {
         const success = await copyToClipboard(text);
         if (success) showCopySuccess(btn);
     });
+    bindHighlightEvents(btn, contentEl);
     contentEl.appendChild(btn);
 
-    // 右下角常驻按钮
-    const bottomBtn = createCopyButton(`${COPY_BTN_CLASS} ${BOTTOM_BUTTON_CLASS}`);
+    // 右下角悬停按钮 - 同样使用 absolute 定位
+    const bottomBtn = createCopyButton(`${COPY_BTN_CLASS} ${BOTTOM_BUTTON_CLASS}`, 'bottom');
     bottomBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -599,5 +617,6 @@ export const ensureContentCopyButton = (contentEl) => {
         const success = await copyToClipboard(text);
         if (success) showCopySuccess(bottomBtn);
     });
+    bindHighlightEvents(bottomBtn, contentEl);
     contentEl.appendChild(bottomBtn);
 };
