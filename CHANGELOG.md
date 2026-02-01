@@ -6,6 +6,23 @@
 
 ---
 
+## v2.3.4 (2026-02-01)
+
+> 社区贡献: 感谢 [@mikessslxxx](https://github.com/mikessslxxx) 的 PR #18
+
+### 新功能
+- macOS / Linux 跨平台支持
+- 跨平台路径规范化与检测
+- Unix 系统提权安装流程 (sudo/pkexec)
+- GitHub Actions 自动化构建与发布
+
+### 优化
+- 路径检测增强，支持 Linux 探测
+- 前端适配 macOS Resources 路径
+- 窗口装饰策略调整，适配 macOS 系统标题栏
+
+---
+
 ## v2.3.3 (2026-01-31)
 
 ### 修复
