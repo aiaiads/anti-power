@@ -22,9 +22,11 @@ import { getClassString } from './utils.js';
 
 /**
  * 将表格节点转换为 Markdown 表格字符串
- * @param {HTMLTableElement} tableEl
- * @returns {string}
- * 边界：仅处理文本内容，忽略复杂单元格结构（合并单元格等）
+ *
+ * 仅处理文本内容，忽略复杂单元格结构（合并单元格等）。
+ *
+ * @param {HTMLTableElement} tableEl - 表格元素
+ * @returns {string} Markdown 格式的表格字符串
  */
 const extractTable = (tableEl) => {
     let markdown = '';
@@ -52,7 +54,8 @@ const extractTable = (tableEl) => {
 
 /**
  * 从 KaTeX 或 MathJax 的渲染结构中提取 LaTeX 源码
- * @param {Element} mathEl
+ *
+ * @param {Element} mathEl - 数学公式元素
  * @returns {string|null} 提取失败返回 null
  */
 const extractLatexFromMath = (mathEl) => {
@@ -76,9 +79,12 @@ const extractLatexFromMath = (mathEl) => {
 };
 
 /**
- * 获取元素内的纯文本内容（用于内联格式化）
- * @param {Element} el
- * @returns {string}
+ * 获取元素内的纯文本内容
+ *
+ * 用于内联格式化。
+ *
+ * @param {Element} el - 目标元素
+ * @returns {string} 文本内容
  */
 const getInnerText = (el) => {
     if (!el) return '';
@@ -87,9 +93,10 @@ const getInnerText = (el) => {
 
 /**
  * 递归提取格式化内容
+ *
  * @param {Element} element - 待提取的节点
- * @param {Object} context - 上下文信息
- * @returns {string}
+ * @param {Object} [context={}] - 上下文信息
+ * @returns {string} 提取的内容
  */
 const extractNodeContent = (element, context = {}) => {
     if (!element) return '';
@@ -350,9 +357,10 @@ const extractNodeContent = (element, context = {}) => {
 
 /**
  * 提取元素所有子节点的内容
- * @param {Element} element
- * @param {Object} context
- * @returns {string}
+ *
+ * @param {Element} element - 父元素
+ * @param {Object} [context={}] - 上下文信息
+ * @returns {string} 提取的内容
  */
 const extractChildrenContent = (element, context = {}) => {
     let result = '';
@@ -403,12 +411,15 @@ const extractChildrenContent = (element, context = {}) => {
 };
 
 /**
- * 提取格式化内容（代码块、表格、数学公式、Mermaid、Markdown 格式等）
+ * 提取格式化内容
+ *
+ * 支持代码块、表格、数学公式、Mermaid、Markdown 格式等。
+ * 递归遍历 DOM，识别各种 HTML 元素并转换为对应的 Markdown 格式，
+ * 包括标题、加粗、斜体、列表、链接、代码块、表格等。
+ *
  * @param {Element} element - 待提取的根节点
  * @param {boolean} [useRawText=false] - 此参数已废弃，保留以兼容现有调用
- * @returns {string}
- * 实现思路：递归遍历 DOM，识别各种 HTML 元素并转换为对应的 Markdown 格式，
- * 包括标题、加粗、斜体、列表、链接、代码块、表格等。
+ * @returns {string} Markdown 格式的内容
  */
 export const extractFormattedContent = (element, useRawText = false) => {
     if (!element) return '';

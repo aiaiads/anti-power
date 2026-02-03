@@ -1,4 +1,6 @@
-// 补丁安装与卸载模块
+//! 补丁安装与卸载模块
+//!
+//! 处理补丁文件的安装、卸载、配置更新等操作
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

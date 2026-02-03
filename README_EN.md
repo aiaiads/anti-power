@@ -6,10 +6,10 @@
 
 <p align="center">
   <a href="https://github.com/daoif/anti-power/releases">
-    <img src="https://img.shields.io/badge/Version-v2.4.0-blue.svg" alt="Version">
+    <img src="https://img.shields.io/badge/Version-v3.0.0-blue.svg" alt="Version">
   </a>
   <a href="https://codeium.com/antigravity">
-    <img src="https://img.shields.io/badge/Supports_Antigravity-v1.15.8-green.svg" alt="Antigravity">
+    <img src="https://img.shields.io/badge/Supports_Antigravity-v1.16.5-green.svg" alt="Antigravity">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-orange.svg" alt="License">
@@ -45,12 +45,19 @@ Anti-Power enhances the Antigravity Sidebar and Manager window by applying patch
 | **Manager Layout Adjustment** | Supports conversation width and font size adjustment |
 | **Floating Copy Button** | Top-right hover button + bottom-right persistent button for easy copying |
 
-### Copy Feature Highlights
+### Copy Features
 
-- Code blocks automatically include language identifiers, e.g., ` ```python `
+- Code blocks automatically include language identifiers, e.g., \`\`\`python
 - Tables are automatically converted to Markdown table format
 - Smartly ignores AI intermediate thinking processes, copying only the final result
 - Formulas and Mermaid diagrams are automatically restored to source code
+
+### Patcher Features
+
+- **Multi-language**: Support for English and Chinese interfaces
+- **Themes**: Support for Light and Dark modes
+- **Path Detection**: Auto-detect IDE directory for a hassle-free installation
+- **Conversation Cleanup**: Clean conversation caches (macOS/Linux)
 
 ---
 
@@ -74,8 +81,8 @@ For manual installation, download the patch zip file from Releases (e.g., `anti-
 
 ### macOS (Recommended)
 
-1. Download `anti-power-macos-universal.dmg` (Intel / Apple Silicon)
-2. Open the DMG and drag `anti-power.app` to Applications
+1. Download `anti-power-macos-universal.dmg` (Intel/Apple Silicon)
+2. Open the DMG and drag `Anti-Power.app` to Applications
 3. Run it and install the patch as prompted
 
 #### Temporary fix for macOS "is damaged"
@@ -84,7 +91,7 @@ If macOS shows "is damaged" or "can't be opened" on first launch, try this tempo
 
 ```bash
 # Remove the quarantine attribute (adjust the path if needed)
-xattr -cr /Applications/anti-power.app
+xattr -cr /Applications/Anti-Power.app
 ```
 
 Or: right-click the app -> choose "Open" (instead of double-click).
@@ -94,9 +101,14 @@ Or: right-click the app -> choose "Open" (instead of double-click).
 1. Download `anti-power-linux.AppImage`
 2. Make it executable and run it, then install the patch as prompted
 
+```bash
+chmod +x ./anti-power-linux.AppImage
+./anti-power-linux.AppImage
+```
+
 ### macOS & Linux (Script, Optional)
 
-If the installer app isn't usable, or you prefer CLI / batch installs, download `anti-power-patches.zip` from Releases, unzip it, and run `anti-power.sh` inside.
+If the installer app isn't usable, or you prefer CLI/batch installs, download `anti-power-patches.zip` from Releases, unzip it, and run `anti-power.sh` inside.
 
 > ⚠️ **Note**: Requires admin privileges; run in a terminal.
 
@@ -132,7 +144,7 @@ For manual installation, please refer to [manual-install.md](patcher/patches/man
 
 ## 📋 Version Info
 
-Current Version: **v2.4.0** | Supports Antigravity: **v1.15.8**
+Current Version: **v3.0.0** | Supports Antigravity: **v1.16.5**
 
 For full changelog, see [CHANGELOG_EN.md](CHANGELOG_EN.md).
 

@@ -30,21 +30,21 @@ let config = {
 };
 
 /**
- * 获取渲染根节点，按优先级依次寻找
- * @returns {Element}
+ * 获取渲染根节点
+ *
+ * 按优先级依次寻找 chat、react-app 或 body。
+ *
+ * @returns {Element} 渲染根节点
  */
 const getRoot = () =>
     document.getElementById('chat') ||
     document.getElementById('react-app') ||
     document.body;
 
-// -------------------------
-// Classic scan (current)
-// -------------------------
-
 /**
- * 扫描根节点并处理需要增强的内容区域（v2.0.1 原样逻辑）
- * @param {Element} root
+ * 扫描根节点并处理需要增强的内容区域
+ *
+ * @param {Element} root - 要扫描的根节点
  * @returns {void}
  */
 const scanClassic = (root) => {
@@ -83,7 +83,11 @@ let pendingNodesClassic = new Set();
 let scheduledClassic = false;
 
 /**
- * 批量处理待扫描节点（v2.0.1 原样逻辑）
+ * 批量处理待扫描节点
+ *
+ * 在下一帧执行所有累积的扫描任务。
+ *
+ * @returns {void}
  */
 const flushScanClassic = () => {
     scheduledClassic = false;
@@ -100,8 +104,12 @@ const flushScanClassic = () => {
 };
 
 /**
- * 调度扫描任务（v2.0.1 原样逻辑）
- * @param {NodeList|Array} nodes
+ * 调度扫描任务
+ *
+ * 将节点加入待扫描队列，在下一帧执行。
+ *
+ * @param {NodeList|Array} nodes - 要扫描的节点列表
+ * @returns {void}
  */
 const scheduleScanClassic = (nodes) => {
     let hasElements = false;
@@ -129,7 +137,10 @@ const scheduleScanClassic = (nodes) => {
 };
 
 /**
- * 初始化扫描与 MutationObserver（v2.0.1 原样逻辑）
+ * 初始化扫描与 MutationObserver
+ *
+ * 启动初始扫描并设置 DOM 变更监听。
+ *
  * @returns {void}
  */
 const initClassic = () => {
@@ -161,8 +172,11 @@ const initClassic = () => {
 };
 
 /**
- * 模块入口：接收配置并启动
- * @param {Object} userConfig - 用户配置
+ * 模块入口
+ *
+ * 接收配置并启动扫描模块。
+ *
+ * @param {Object} [userConfig={}] - 用户配置
  * @returns {void}
  */
 export const start = (userConfig = {}) => {

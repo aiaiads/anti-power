@@ -1,11 +1,13 @@
-// 路径检测模块
-// Windows: 注册表查询 + 常见路径扫描
-// macOS/Linux: 标准路径探测, 未命中时返回 None
+//! 路径检测模块
+//!
+//! 自动检测 Antigravity 安装路径
+//! - Windows: 注册表查询 + 常见路径扫描
+//! - macOS/Linux: 标准路径探测，未命中时返回 None
 
 use std::path::PathBuf;
 use super::paths;
 
-// 平台特定实现直接内联, 避免子模块路径问题
+// 平台特定实现直接内联，避免子模块路径问题
 
 /// 检测 Antigravity 安装路径
 /// 返回找到的第一个有效路径, 或 None

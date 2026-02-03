@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Usage:
-# 1. chmod +x ./antigravity.sh
-# 2. sudo ./antigravity.sh
+# 使用方法：
+# 1. chmod +x ./anti-clean.sh
+# 2. sudo ./anti-clean.sh
 #
-# This script supports both macOS and Linux:
+# 本脚本支持 macOS 和 Linux：
 # - macOS: $HOME/Library/Application Support/Antigravity
 # - Linux: ${XDG_CONFIG_HOME:-$HOME/.config}/Antigravity
 

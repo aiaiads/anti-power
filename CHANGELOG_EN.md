@@ -1,8 +1,28 @@
 # Changelog
 
-This document records the update content of each Anti-Power version.
+This document records changes for each Anti-Power version.
 
 [中文](CHANGELOG.md) | English
+
+---
+
+## v3.0.0 (Unreleased)
+
+### New Features
+- UI language switch (Chinese/English)
+- Light/dark theme toggle
+- Collapsible feature cards for sidebar/Manager options
+
+### Improvements
+- Installer layout redesigned with a responsive two-column view; clean tool placement adapts to screen size
+- Visual refresh across typography, color tokens, buttons, cards, modals, and animations
+
+### Fixes
+- Fixed the execution logic of cleaning tools (macOS/Linux) to ensure secondary confirmation
+
+### Documentation
+- Synced README/Changelog/Release Notes to v3.0.0
+- README: update supported Antigravity version to v1.16.5 and standardize macOS app name to `Anti-Power.app`
 
 ---
 
@@ -25,7 +45,7 @@ This document records the update content of each Anti-Power version.
 > Community contribution: Thanks to [@mikessslxxx](https://github.com/mikessslxxx) for PR #18
 
 ### New Features
-- macOS / Linux cross-platform support
+- macOS/Linux cross-platform support
 - Cross-platform path normalization and detection
 - Unix privileged installation flow (sudo/pkexec)
 - GitHub Actions automated build and release
@@ -42,7 +62,7 @@ This document records the update content of each Anti-Power version.
 ### Fixes
 - Fix critical bug where math formula rendering fails
 - Temporarily rollback formula rendering logic to v2.0.1 stable version
-- Add formula rendering mode switch (Classic / Deferred)
+- Add formula rendering mode switch (Classic/Deferred)
 
 ---
 

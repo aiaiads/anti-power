@@ -1,4 +1,6 @@
-// 配置管理模块
+//! 配置管理模块
+//!
+//! 处理应用配置的读取和保存
 
 use serde::{Deserialize, Serialize};
 use std::fs;

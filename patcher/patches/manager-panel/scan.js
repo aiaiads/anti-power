@@ -25,13 +25,13 @@ let config = {
     copyButton: true,
 };
 
-// -------------------------
-// Classic scan (current)
-// -------------------------
-
 /**
  * 扫描根节点
- * @param {HTMLElement} root
+ *
+ * 查找匹配内容选择器的节点并触发渲染。
+ *
+ * @param {HTMLElement} root - 要扫描的根节点
+ * @returns {void}
  */
 const scanClassic = (root) => {
     if (!root || !root.isConnected) return;
@@ -58,7 +58,8 @@ const scanClassic = (root) => {
 
 /**
  * 获取渲染根节点
- * @returns {HTMLElement}
+ *
+ * @returns {HTMLElement} 文档 body 元素
  */
 const getRoot = () => document.body;
 
@@ -81,8 +82,11 @@ const flushScan = () => {
 
 /**
  * 解析扫描根节点
- * @param {Node} target
- * @returns {HTMLElement|null}
+ *
+ * 从目标节点向上查找最近的内容容器或 section。
+ *
+ * @param {Node} target - 目标节点
+ * @returns {HTMLElement|null} 扫描根节点
  */
 const resolveScanRoot = (target) => {
     if (!target) return null;
@@ -101,7 +105,11 @@ const resolveScanRoot = (target) => {
 
 /**
  * 调度扫描任务
- * @param {NodeList|Array} nodes
+ *
+ * 将节点加入待扫描队列，在下一帧执行。
+ *
+ * @param {NodeList|Array} nodes - 要扫描的节点列表
+ * @returns {void}
  */
 const scheduleScan = (nodes) => {
     let hasElements = false;
@@ -159,7 +167,11 @@ const init = () => {
 
 /**
  * 模块入口
- * @param {Object} userConfig
+ *
+ * 接收配置并启动扫描模块。
+ *
+ * @param {Object} [userConfig={}] - 用户配置
+ * @returns {void}
  */
 export const start = (userConfig = {}) => {
     config = { ...config, ...userConfig };

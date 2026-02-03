@@ -45,6 +45,10 @@ const reloadScript = async (src) => {
 
 /**
  * 加载 KaTeX 库
+ *
+ * 使用 Promise 缓存避免重复加载。
+ *
+ * @returns {Promise<boolean>} true 表示加载成功
  */
 const ensureKatex = async () => {
     if (katexLoaded) return true;
@@ -229,7 +233,11 @@ const renderMathIntoElement = (el) => {
 
 /**
  * 渲染元素内的数学公式
- * @param {HTMLElement} el
+ *
+ * 已渲染节点会跳过，避免重复处理。
+ *
+ * @param {HTMLElement} el - 内容元素
+ * @returns {Promise<void>}
  */
 export const renderMath = async (el) => {
     if (!el || el.hasAttribute(MATH_ATTR)) return;

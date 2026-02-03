@@ -66,6 +66,10 @@ const ensureMermaidPolicy = () => {
 
 /**
  * 加载 Mermaid 库
+ *
+ * 使用 Promise 缓存避免重复加载。
+ *
+ * @returns {Promise<boolean>} true 表示加载成功
  */
 const ensureMermaid = async () => {
     if (mermaidLoaded) return true;
@@ -98,8 +102,9 @@ const ensureMermaid = async () => {
 
 /**
  * 查找 Mermaid 代码块容器
- * @param {HTMLElement} el
- * @returns {HTMLElement|null}
+ *
+ * @param {HTMLElement} el - 起始元素
+ * @returns {HTMLElement|null} 代码块元素或 null
  */
 const resolveCodeBlock = (el) => {
     if (!el) return null;
@@ -206,7 +211,11 @@ const resolveHideTarget = (codeBlock) => {
 
 /**
  * 渲染 Mermaid 图表
+ *
+ * 检测 Mermaid 语法并渲染为 SVG 图表。
+ *
  * @param {HTMLElement} el - 包含 Mermaid 代码的 code-block 或其子元素
+ * @returns {Promise<void>}
  */
 export const renderMermaid = async (el) => {
     console.log('[Manager DEBUG] renderMermaid called', { elTag: el?.tagName, elClass: el?.className?.slice?.(0, 50) });
@@ -367,7 +376,9 @@ export const renderMermaid = async (el) => {
 
 /**
  * 扫描指定区域内所有可能的 Mermaid 代码块
- * @param {HTMLElement} root
+ *
+ * @param {HTMLElement} root - 要扫描的根节点
+ * @returns {void}
  */
 export const scanMermaid = (root) => {
     console.log('[Manager DEBUG] scanMermaid called', { rootTag: root?.tagName, rootClass: root?.className?.slice?.(0, 50) });

@@ -1,5 +1,15 @@
-// 高级诊断脚本, 用于定位 Manager 窗口加载与渲染问题.
-// 需要 Antigravity 以 --remote-debugging-port=9222 启动并打开 Manager 窗口.
+/**
+ * 高级诊断脚本
+ *
+ * 用于定位 Manager 窗口加载与渲染问题。
+ * 需要 Antigravity 以 --remote-debugging-port=9222 启动并打开 Manager 窗口。
+ *
+ * 使用方法:
+ * 1. 启动 Antigravity: Antigravity.exe --remote-debugging-port=9222
+ * 2. 打开 Manager 窗口
+ * 3. 运行: node scripts/debug-manager-advanced.js
+ */
+
 const { chromium } = require('playwright');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

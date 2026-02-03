@@ -1,24 +1,33 @@
-// 嵌入的补丁资源
-// 使用 include_str! 将文件内容在编译时嵌入到二进制中
+//! 嵌入的补丁资源模块
+//!
+//! 使用 include_str! 将文件内容在编译时嵌入到二进制中
+//! 支持开发模式下从磁盘实时读取文件
+
 use std::fs;
 use std::path::PathBuf;
 
+// 编译时生成的嵌入文件列表
 include!(concat!(env!("OUT_DIR"), "/embedded_patches.rs"));
 
-/// 所有需要写入的文件列表
+/// 获取所有嵌入的补丁文件列表
+/// 返回 (相对路径, 文件内容) 的元组列表
 pub fn get_all_files() -> Vec<(&'static str, &'static str)> {
     EMBEDDED_FILES.to_vec()
 }
 
+/// 查找 patches 目录
+/// 从当前目录向上搜索，最多查找 6 层
 fn find_patches_dir() -> Option<PathBuf> {
     let mut dir = std::env::current_dir().ok()?;
 
     for _ in 0..6 {
+        // 直接子目录
         let direct = dir.join("patches");
         if direct.is_dir() {
             return Some(direct);
         }
 
+        // patcher 子目录下
         let nested = dir.join("patcher").join("patches");
         if nested.is_dir() {
             return Some(nested);
@@ -32,7 +41,12 @@ fn find_patches_dir() -> Option<PathBuf> {
     None
 }
 
+/// 运行时获取所有补丁文件
+/// 
+/// 开发模式下从磁盘实时读取文件（便于热更新调试）
+/// 发布模式下使用编译时嵌入的文件内容
 pub fn get_all_files_runtime() -> Result<Vec<(String, String)>, String> {
+    // 开发模式：从磁盘读取
     if cfg!(debug_assertions) {
         let patches_dir = find_patches_dir()
             .ok_or_else(|| "未找到 patches 目录，请从项目根目录或 patcher 目录启动".to_string())?;
@@ -46,6 +60,7 @@ pub fn get_all_files_runtime() -> Result<Vec<(String, String)>, String> {
         return Ok(files);
     }
 
+    // 发布模式：使用嵌入的文件
     Ok(get_all_files()
         .into_iter()
         .map(|(path, content)| (path.to_string(), content.to_string()))

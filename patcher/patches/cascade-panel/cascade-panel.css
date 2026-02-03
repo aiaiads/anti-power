@@ -39,7 +39,7 @@ pre:not(.inline) code,
     font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, 'Liberation Mono', Menlo, Monaco, 'Courier New', monospace !important;
 }
 
-/* Shared copy button styling - 使用蓝色主题 */
+/* 复制按钮基础样式 - 使用蓝色主题 */
 .cascade-copy-btn {
     display: flex;
     align-items: center;
@@ -47,7 +47,7 @@ pre:not(.inline) code,
     padding: 2px 6px;
     border: none;
     border-radius: 4px;
-    background: #3b82f6;
+    background: rgb(51, 118, 205);
     color: #ffffff;
     font-size: 0.85em;
     line-height: 1.2;
@@ -86,14 +86,14 @@ pre:not(.inline) code,
     opacity: 1;
 }
 
-/* 悬停时显示边框高亮 (使用原 outline 样式) */
+/* 悬停时显示边框高亮 */
 [data-cascade-copy-bound='1']:hover {
-    outline: 1px solid var(--vscode-focusBorder, #007fd4);
+    outline: 1px solid rgb(51, 118, 205);
     outline-offset: 2px;
     border-radius: 4px;
 }
 
-/* Content-area copy button (top-right, only visible on hover/focus) */
+/* 内容区复制按钮 - 右上角悬停显示 */
 .cascade-copy-button {
     position: absolute;
     top: 0;
