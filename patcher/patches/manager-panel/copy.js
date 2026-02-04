@@ -32,9 +32,12 @@ const COMMON_LANGS = new Set([
 const SKIP_TAGS = new Set(['STYLE', 'SCRIPT', 'NOSCRIPT', 'TEMPLATE', 'SVG']);
 
 /**
- * 获取类名字符串（兼容 SVG）
- * @param {Element} el
- * @returns {string}
+ * 获取类名字符串
+ *
+ * 兼容 SVG 元素的 SVGAnimatedString 类型。
+ *
+ * @param {Element} el - 目标元素
+ * @returns {string} 类名字符串
  */
 const getClassString = (el) => {
     if (!el) return '';
@@ -46,7 +49,8 @@ const getClassString = (el) => {
 
 /**
  * 从 KaTeX 或 MathJax 的渲染结构中提取 LaTeX 源码
- * @param {Element} mathEl
+ *
+ * @param {Element} mathEl - 数学公式元素
  * @returns {string|null} 提取失败返回 null
  */
 const extractLatexFromMath = (mathEl) => {
@@ -70,10 +74,13 @@ const extractLatexFromMath = (mathEl) => {
 };
 
 /**
- * 提取列表项内容，处理内联代码和数学公式
- * 只提取列表项的直接文本内容，嵌套列表和代码块由调用方单独处理
- * @param {HTMLLIElement} li
- * @returns {string}
+ * 提取列表项内容
+ *
+ * 处理内联代码和数学公式。
+ * 只提取列表项的直接文本内容，嵌套列表和代码块由调用方单独处理。
+ *
+ * @param {HTMLLIElement} li - 列表项元素
+ * @returns {string} 提取的内容
  */
 const extractListItemContent = (li) => {
     let content = '';
@@ -154,6 +161,7 @@ const extractListItemContent = (li) => {
 
 /**
  * 提取代码块内容
+ *
  * @param {Element} codeBlockContainer - 包含代码块的容器
  * @returns {string} Markdown 格式的代码块
  */
@@ -197,10 +205,13 @@ const extractCodeBlockContent = (codeBlockContainer) => {
 };
 
 /**
- * 将有序列表节点转换为 Markdown 格式（支持嵌套）
- * @param {HTMLOListElement} olEl
- * @param {number} depth - 嵌套深度
- * @returns {string}
+ * 将有序列表节点转换为 Markdown 格式
+ *
+ * 支持嵌套列表和列表项内的代码块。
+ *
+ * @param {HTMLOListElement} olEl - 有序列表元素
+ * @param {number} [depth=0] - 嵌套深度
+ * @returns {string} Markdown 格式的列表
  */
 const extractOrderedList = (olEl, depth = 0) => {
     let markdown = '\n';
@@ -241,10 +252,13 @@ const extractOrderedList = (olEl, depth = 0) => {
 };
 
 /**
- * 将无序列表节点转换为 Markdown 格式（支持嵌套）
- * @param {HTMLUListElement} ulEl
- * @param {number} depth - 嵌套深度
- * @returns {string}
+ * 将无序列表节点转换为 Markdown 格式
+ *
+ * 支持嵌套列表和列表项内的代码块。
+ *
+ * @param {HTMLUListElement} ulEl - 无序列表元素
+ * @param {number} [depth=0] - 嵌套深度
+ * @returns {string} Markdown 格式的列表
  */
 const extractUnorderedList = (ulEl, depth = 0) => {
     let markdown = '\n';
@@ -284,8 +298,9 @@ const extractUnorderedList = (ulEl, depth = 0) => {
 
 /**
  * 将表格节点转换为 Markdown 表格字符串
- * @param {HTMLTableElement} tableEl
- * @returns {string}
+ *
+ * @param {HTMLTableElement} tableEl - 表格元素
+ * @returns {string} Markdown 格式的表格
  */
 const extractTable = (tableEl) => {
     let markdown = '';
@@ -312,9 +327,12 @@ const extractTable = (tableEl) => {
 };
 
 /**
- * 提取格式化内容（代码块、表格、数学公式、Mermaid、列表等）
- * @param {HTMLElement} el
- * @returns {string}
+ * 提取格式化内容
+ *
+ * 支持代码块、表格、数学公式、Mermaid、列表等。
+ *
+ * @param {HTMLElement} el - 内容元素
+ * @returns {string} Markdown 格式的内容
  */
 const extractFormattedText = (el) => {
     if (!el) return '';
@@ -559,18 +577,25 @@ const extractFormattedText = (el) => {
 };
 
 /**
- * 获取配置（从全局变量读取）
- * @returns {Object}
+ * 获取配置
+ *
+ * 从全局变量读取。
+ *
+ * @returns {Object} 配置对象
  */
 const getConfig = () => {
     return window.__MANAGER_CONFIG__ || {};
 };
 
 /**
- * 绑定智能感应事件（鼠标在按钮附近才显示）
+ * 绑定智能感应事件
+ *
+ * 鼠标在按钮附近才显示按钮。
+ *
  * @param {HTMLElement} contentEl - 内容容器
  * @param {HTMLElement} topBtn - 右上角按钮
- * @param {HTMLElement} bottomBtn - 右下角按钮（可选）
+ * @param {HTMLElement} [bottomBtn] - 右下角按钮（可选）
+ * @returns {void}
  */
 const bindSmartHover = (contentEl, topBtn, bottomBtn) => {
     contentEl.addEventListener('mousemove', (e) => {
@@ -605,7 +630,11 @@ const bindSmartHover = (contentEl, topBtn, bottomBtn) => {
 
 /**
  * 为内容区添加复制按钮
- * @param {HTMLElement} contentEl
+ *
+ * 已绑定节点会跳过，避免重复渲染。
+ *
+ * @param {HTMLElement} contentEl - 内容容器元素
+ * @returns {void}
  */
 export const ensureContentCopyButton = (contentEl) => {
     if (!contentEl || contentEl.getAttribute(BOUND_ATTR) === '1') return;
@@ -662,7 +691,11 @@ export const ensureContentCopyButton = (contentEl) => {
 };
 
 /**
- * 为反馈区域添加复制按钮（Good/Bad 按钮旁边）
+ * 为反馈区域添加复制按钮
+ *
+ * 在 Good/Bad 按钮旁边添加复制按钮，向上回溯查找内容区。
+ *
+ * @returns {void}
  */
 export const addFeedbackCopyButtons = () => {
     const feedbackContainers = document.querySelectorAll('[data-tooltip-id^="up-"]');

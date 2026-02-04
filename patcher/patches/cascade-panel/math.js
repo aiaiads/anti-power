@@ -28,9 +28,12 @@ let mathEngine = null;
 let mathReadyPromise = null;
 
 /**
- * 确保数学渲染引擎可用，优先 KaTeX，失败后回退 MathJax
+ * 确保数学渲染引擎可用
+ *
+ * 优先 KaTeX，失败后回退 MathJax。
+ * 使用 Promise 缓存避免重复加载（性能优化）。
+ *
  * @returns {Promise<void>}
- * 说明：使用 Promise 缓存避免重复加载（性能优化）
  */
 export const ensureMathEngine = () => {
     if (mathReadyPromise) return mathReadyPromise;
@@ -86,9 +89,11 @@ export const ensureMathEngine = () => {
 
 /**
  * 渲染内容中的数学公式
- * @param {Element} contentEl
+ *
+ * 可编辑区域直接跳过；无数学提示时快速返回以降低开销。
+ *
+ * @param {Element} contentEl - 内容元素
  * @returns {Promise<void>}
- * 边界：可编辑区域直接跳过；无数学提示时快速返回以降低开销
  */
 export const renderMath = async (contentEl) => {
     if (!contentEl || isEditable(contentEl)) return;

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, ask } from "@tauri-apps/plugin-dialog";
+import { useI18n } from 'vue-i18n';
 import TitleBar from "./components/TitleBar.vue";
 import PathCard from "./components/PathCard.vue";
 import FeatureCard from "./components/FeatureCard.vue";
@@ -9,12 +10,18 @@ import ManagerFeatureCard from "./components/ManagerFeatureCard.vue";
 import AboutModal from "./components/AboutModal.vue";
 import ConfirmModal from "./components/ConfirmModal.vue";
 
-// 常量
-const APP_VERSION = "2.4.0";
+const { t } = useI18n();
+
+// 应用版本号
+const APP_VERSION = "3.0.0";
+// GitHub 仓库地址
 const GITHUB_URL = "https://github.com/daoif/anti-power";
 
-// 补丁文件清单
-const PATCH_FILES = {
+/**
+ * 补丁文件清单
+ * 包含将被修改的文件、新增的文件/目录、以及废弃的文件
+ */
+const PATCH_FILES = computed(() => ({
   // 将被修改的原始文件
   modified: [
     "cascade-panel.html",
@@ -22,24 +29,34 @@ const PATCH_FILES = {
   ],
   // 将添加的新文件/目录
   added: [
-    "cascade-panel/  (侧边栏模块)",
-    "manager-panel/  (Manager模块)",
+    `cascade-panel/ ${t('app.files.cascadePanelLabel')}`,
+    `manager-panel/ ${t('app.files.managerPanelLabel')}`,
   ],
   // 废弃文件（旧版本遗留，新版本不再使用）
   deprecated: [] as string[],
-};
+}));
 
-// 状态
+// Antigravity 安装路径
 const antigravityPath = ref<string | null>(null);
+// 是否正在检测路径
 const isDetecting = ref(false);
+// 补丁是否已安装
 const isInstalled = ref(false);
+// 是否显示关于弹窗
 const showAbout = ref(false);
+// 是否显示确认弹窗
 const showConfirm = ref(false);
+// 当前平台标识
 const platform = navigator.platform.toLowerCase();
+// 是否支持清理功能（仅 macOS/Linux）
 const isCleanSupported = platform.includes('mac') || platform.includes('linux');
+// 是否正在执行清理
 const isCleaning = ref(false);
 
-// 侧边栏功能开关
+/**
+ * 侧边栏功能开关配置
+ * 控制 cascade-panel 中各项功能的启用状态
+ */
 const features = ref({
   enabled: true,
   mermaid: true,
@@ -55,7 +72,10 @@ const features = ref({
   copyButtonCustomText: '',
 });
 
-// Manager 功能开关（独立配置，默认启用）
+/**
+ * Manager 功能开关配置
+ * 控制 manager-panel 中各项功能的启用状态，独立于侧边栏配置
+ */
 const managerFeatures = ref({
   enabled: true,
   mermaid: true,
@@ -72,7 +92,10 @@ const managerFeatures = ref({
   copyButtonCustomText: '',
 });
 
-// 检测 Antigravity 安装路径
+/**
+ * 检测 Antigravity 安装路径
+ * 自动搜索系统中的 Antigravity 安装位置
+ */
 async function detectPath() {
   isDetecting.value = true;
   try {
@@ -83,13 +106,16 @@ async function detectPath() {
       await checkPatchStatus(normalized);
     }
   } catch (e) {
-    console.error("检测失败:", e);
+    console.error(t('app.error.detect'), e);
   } finally {
     isDetecting.value = false;
   }
 }
 
-// 检测补丁状态和读取配置
+/**
+ * 检测补丁状态并读取配置
+ * @param path - Antigravity 安装路径
+ */
 async function checkPatchStatus(path: string) {
   try {
     isInstalled.value = await invoke<boolean>("check_patch_status", { path });
@@ -122,16 +148,19 @@ async function checkPatchStatus(path: string) {
       }
     }
   } catch (e) {
-    console.error("检测补丁状态失败:", e);
+    console.error(t('app.error.checkPatch'), e);
   }
 }
 
-// 手动选择路径
+/**
+ * 手动选择 Antigravity 安装路径
+ * 打开目录选择对话框让用户选择
+ */
 async function browsePath() {
   try {
     const selected = await open({
       directory: true,
-      title: "选择 Antigravity 安装目录",
+      title: t('pathCard.selectTitle'),
     });
     if (selected) {
       const normalized = await normalizePath(selected as string);
@@ -141,17 +170,23 @@ async function browsePath() {
       }
     }
   } catch (e) {
-    console.error("选择目录失败:", e);
+    console.error(t('app.error.selectPath'), e);
   }
 }
 
-// 请求安装（显示确认弹窗）
+/**
+ * 请求安装补丁
+ * 显示确认弹窗，等待用户确认后执行安装
+ */
 function requestInstall() {
   if (!antigravityPath.value) return;
   showConfirm.value = true;
 }
 
-// 确认安装
+/**
+ * 确认并执行安装补丁
+ * 调用后端命令安装补丁文件
+ */
 async function confirmInstall() {
   showConfirm.value = false;
   if (!antigravityPath.value) return;
@@ -162,33 +197,45 @@ async function confirmInstall() {
       managerFeatures: managerFeatures.value
     });
     isInstalled.value = true;
-    showToast('✓ 补丁安装成功');
+    showToast(t('toast.installSuccess'));
   } catch (e) {
-    console.error("安装失败:", e);
-    showToast(`✗ 安装失败: ${getErrorMessage(e)}`);
+    console.error(t('app.error.install'), e);
+    showToast(t('toast.installFailed', { error: getErrorMessage(e) }));
   }
 }
 
-// 卸载补丁
+/**
+ * 卸载补丁
+ * 恢复原始文件，移除补丁相关内容
+ */
 async function uninstallPatch() {
   if (!antigravityPath.value) return;
   try {
     await invoke("uninstall_patch", { path: antigravityPath.value });
     isInstalled.value = false;
-    showToast('✓ 已恢复原版');
+    showToast(t('toast.restoreSuccess'));
   } catch (e) {
-    console.error("卸载失败:", e);
-    showToast(`✗ 恢复失败: ${getErrorMessage(e)}`);
+    console.error(t('app.error.uninstall'), e);
+    showToast(t('toast.restoreFailed', { error: getErrorMessage(e) }));
   }
 }
 
-// 清理对话缓存（仅 macOS）
+/**
+ * 清理对话缓存
+ * 仅支持 macOS/Linux 平台
+ * @param force - 是否强制清理（删除更多缓存数据）
+ */
 async function runAntiClean(force = false) {
   if (!isCleanSupported || isCleaning.value) return;
   const message = force
-    ? '将强制清理（忽略运行中检测），可能影响正在运行的 Antigravity。确定继续？'
-    : '将清理对话标题记录与缓存，建议先关闭 Antigravity。确定继续？';
-  if (!window.confirm(message)) {
+    ? t('cleanTool.forceConfirmMessage')
+    : t('cleanTool.confirmMessage');
+  const confirmed = await ask(message, {
+    title: force ? t('cleanTool.forceConfirmTitle') : t('cleanTool.confirmTitle'),
+    kind: 'warning'
+  });
+  
+  if (!confirmed) {
     return;
   }
   isCleaning.value = true;
@@ -197,19 +244,24 @@ async function runAntiClean(force = false) {
     if (output) {
       console.log("[anti-clean]", output);
     }
-    showToast('✓ 清理完成');
+    showToast(t('toast.cleanSuccess'));
   } catch (e) {
-    console.error("清理失败:", e);
-    showToast(`✗ 清理失败: ${getErrorMessage(e)}`);
+    console.error(t('app.error.clean'), e);
+    showToast(t('toast.cleanFailed', { error: getErrorMessage(e) }));
   } finally {
     isCleaning.value = false;
   }
 }
 
-// Toast 提示
+// Toast 提示消息内容
 const toastMessage = ref('');
+// 是否显示 Toast 提示
 const showToastFlag = ref(false);
 
+/**
+ * 显示 Toast 提示
+ * @param message - 提示消息内容
+ */
 function showToast(message: string) {
   toastMessage.value = message;
   showToastFlag.value = true;
@@ -218,28 +270,41 @@ function showToast(message: string) {
   }, 3000);
 }
 
+/**
+ * 从错误对象中提取错误消息
+ * @param error - 错误对象
+ * @returns 错误消息字符串
+ */
 function getErrorMessage(error: unknown): string {
   if (typeof error === 'string') {
     return error;
   }
   if (error && typeof error === 'object' && 'message' in error) {
-    return String((error as { message?: unknown }).message ?? '未知错误');
+    return String((error as { message?: unknown }).message ?? t('app.error.unknown'));
   }
-  return '未知错误';
+  return t('app.error.unknown');
 }
 
-// 规范化 Antigravity 路径 (兼容 macOS/Linux 目录结构)
+/**
+ * 规范化 Antigravity 路径
+ * 兼容 macOS/Linux 目录结构，将用户选择的路径转换为标准根目录
+ * @param path - 用户输入或选择的路径
+ * @returns 规范化后的路径，或 null
+ */
 async function normalizePath(path: string): Promise<string | null> {
   try {
     const normalized = await invoke<string | null>("normalize_antigravity_path", { path });
     return normalized;
   } catch (e) {
-    console.error("路径规范化失败:", e);
+    console.error(t('app.error.normalizePath'), e);
     return null;
   }
 }
 
-// 仅更新配置
+/**
+ * 仅更新配置
+ * 在补丁已安装的情况下，只更新功能配置而不重新安装
+ */
 async function updateConfigOnly() {
   if (!antigravityPath.value) return;
   try {
@@ -248,10 +313,10 @@ async function updateConfigOnly() {
       features: features.value,
       managerFeatures: managerFeatures.value
     });
-    showToast('✓ 配置已更新');
+    showToast(t('toast.configUpdated'));
   } catch (e) {
-    console.error("更新配置失败:", e);
-    showToast(`✗ 更新失败: ${getErrorMessage(e)}`);
+    console.error(t('app.error.updateConfig'), e);
+    showToast(t('toast.updateFailed', { error: getErrorMessage(e) }));
   }
 }
 
@@ -262,77 +327,116 @@ onMounted(() => {
 
 <template>
   <div class="app-wrapper">
-    <TitleBar title="Anti-Power" @openAbout="showAbout = true" />
+    <TitleBar :title="$t('app.title')" @openAbout="showAbout = true" />
     
     <main class="app-container">
-      <PathCard 
-        v-model="antigravityPath"
-        :isDetecting="isDetecting"
-        @detect="detectPath"
-        @browse="browsePath"
-      />
+      <div class="app-content">
+        <div class="layout-grid">
+        <section class="side">
+          <PathCard 
+            v-model="antigravityPath"
+            :isDetecting="isDetecting"
+            @detect="detectPath"
+            @browse="browsePath"
+          />
 
-      <FeatureCard v-model="features" />
+          <section class="actions-card">
+            <div class="actions-meta">
+              <span class="status-pill" :class="{ installed: isInstalled }">
+                {{ isInstalled ? $t('status.installed') : $t('status.notInstalled') }}
+              </span>
+              <span class="status-text">
+                {{ isInstalled ? $t('status.installedHint') : $t('status.notInstalledHint') }}
+              </span>
+            </div>
 
-      <ManagerFeatureCard v-model="managerFeatures" />
+            <div class="actions-grid">
+              <button 
+                @click="requestInstall"
+                :disabled="!antigravityPath"
+                class="primary-btn"
+              >
+                {{ isInstalled ? $t('actions.reinstall') : $t('actions.install') }}
+              </button>
+              
+              <button 
+                @click="updateConfigOnly"
+                :disabled="!antigravityPath"
+                class="secondary-btn"
+              >
+                {{ $t('actions.updateConfig') }}
+              </button>
+              
+              <button 
+                @click="uninstallPatch"
+                :disabled="!antigravityPath"
+                class="secondary-btn danger"
+              >
+                {{ $t('actions.restore') }}
+              </button>
+            </div>
+          </section>
 
-      <section class="actions">
-        <button 
-          @click="requestInstall"
-          :disabled="!antigravityPath"
-          class="primary-btn"
-        >
-          {{ isInstalled ? '重新安装' : '安装补丁' }}
-        </button>
-        
-        <button 
-          @click="updateConfigOnly"
-          :disabled="!antigravityPath"
-          class="secondary-btn"
-          title="仅更新功能开关配置，不重新复制补丁文件"
-        >
-          更新配置
-        </button>
-        
-        <button 
-          @click="uninstallPatch"
-          :disabled="!antigravityPath"
-          class="secondary-btn danger"
-        >
-          恢复原版
-        </button>
-      </section>
+          <!-- 桌面端清理工具 (宽屏显示在左侧) -->
+          <section v-show="isCleanSupported" class="clean-area desktop-only">
+            <div class="clean-header">
+              <h2 class="clean-title">{{ $t('cleanTool.title') }}</h2>
+            </div>
+            <div class="clean-actions">
+              <button 
+                @click="runAntiClean(false)"
+                :disabled="isCleaning"
+                class="secondary-btn"
+              >
+                {{ isCleaning ? $t('cleanTool.cleaning') : $t('cleanTool.cleanCache') }}
+              </button>
+              <button 
+                @click="runAntiClean(true)"
+                :disabled="isCleaning"
+                class="secondary-btn danger"
+              >
+                {{ $t('cleanTool.forceClean') }}
+              </button>
+            </div>
+          </section>
 
-      <section v-if="isCleanSupported" class="clean-area">
-        <div class="clean-header">
-          <h3 class="clean-title">清理工具（仅 macOS / Linux）</h3>
-          <p class="clean-desc">用于清理对话标题记录与缓存。</p>
-        </div>
-        <div class="clean-actions">
-          <button 
-            @click="runAntiClean(false)"
-            :disabled="isCleaning"
-            class="secondary-btn"
-            title="清理对话标题记录与缓存（仅 macOS / Linux）"
-          >
-            {{ isCleaning ? '清理中...' : '清理对话缓存' }}
-          </button>
-          <button 
-            @click="runAntiClean(true)"
-            :disabled="isCleaning"
-            class="secondary-btn danger"
-            title="强制清理（忽略运行中检测）"
-          >
-            强制清理
-          </button>
-        </div>
-      </section>
+          </section>
+
+        <section class="main">
+          <FeatureCard v-model="features" />
+          <ManagerFeatureCard v-model="managerFeatures" />
+
+          <!-- 移动端清理工具 (窄屏显示在底部) -->
+          <section v-show="isCleanSupported" class="clean-area mobile-only">
+            <div class="clean-header">
+              <h2 class="clean-title">{{ $t('cleanTool.title') }}</h2>
+            </div>
+            <div class="clean-actions">
+              <button 
+                @click="runAntiClean(false)"
+                :disabled="isCleaning"
+                class="secondary-btn"
+              >
+                {{ isCleaning ? $t('cleanTool.cleaning') : $t('cleanTool.cleanCache') }}
+              </button>
+              <button 
+                @click="runAntiClean(true)"
+                :disabled="isCleaning"
+                class="secondary-btn danger"
+              >
+                {{ $t('cleanTool.forceClean') }}
+              </button>
+            </div>
+          </section>
+        </section>
+      </div>
 
       <footer class="footer">
-        <p>v{{ APP_VERSION }} · 
-          <a :href="GITHUB_URL" target="_blank" class="link">GitHub</a>
+        <p>{{ $t('app.version', { version: APP_VERSION }) }} · 
+          <a :href="GITHUB_URL" target="_blank" class="link">{{ $t('app.github') }}</a>
         </p>
       </footer>
+      </div>
     </main>
 
     <AboutModal 
@@ -344,8 +448,8 @@ onMounted(() => {
 
     <ConfirmModal
       :show="showConfirm"
-      title="确认安装补丁"
-      message="即将安装 Anti-Power 补丁，请确认以下文件变更："
+      :title="$t('confirmModal.title')"
+      :message="$t('confirmModal.message')"
       :modifiedFiles="PATCH_FILES.modified"
       :addedFiles="PATCH_FILES.added"
       :deprecatedFiles="PATCH_FILES.deprecated"
@@ -365,31 +469,154 @@ onMounted(() => {
 <style scoped>
 .app-wrapper {
   height: 100vh;
+  min-width: 420px;
   display: flex;
   flex-direction: column;
   background-color: var(--ag-bg);
+  background-color: var(--ag-bg);
   color: var(--ag-text);
-  overflow: hidden;
+  overflow: hidden; /* 防止最外层滚动 */
 }
 
 .app-container {
   flex: 1;
-  padding: 20px 24px;
-  overflow-y: auto;
-  min-height: 0; /* 关键：允许 flex 子项收缩 */
+  overflow-y: auto; /* 滚动条在这里，且容器全宽 */
+  min-height: 0;
+  width: 100%;
 }
 
-.actions {
+.app-content {
+  padding: 20px 24px;
+  margin: 0 auto;
+  width: min(1120px, 100%);
+}
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+@media (min-width: 860px) {
+  .layout-grid {
+    grid-template-columns: 400px 1fr;
+    gap: 18px;
+  }
+
+  .side {
+    position: sticky;
+    top: 8px;
+    align-self: start;
+    padding-bottom: 0;
+  }
+  
+  /* 响应式显示控制 */
+  .mobile-only {
+    display: none;
+  }
+}
+
+@media (max-width: 859px) {
+  .desktop-only {
+    display: none;
+  }
+}
+
+.main {
+  min-width: 0;
+}
+
+.side,
+.main {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.actions-card {
+  border: 1px solid var(--ag-border);
+  border-radius: var(--radius-lg);
+  background: var(--ag-surface);
+  background-image: var(--ag-gradient-surface);
+  padding: 16px 18px 18px;
+  position: relative;
+  overflow: hidden;
+  position: relative;
+  overflow: hidden;
+  animation: card-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.05s backwards;
+}
+
+.actions-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  pointer-events: none;
+}
+
+.actions-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(204, 204, 204, 0.06);
+  border: 1px solid rgba(204, 204, 204, 0.1);
+  color: var(--ag-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: all var(--transition-normal);
+}
+
+.status-pill.installed {
+  background: var(--ag-accent-subtle);
+  border-color: rgba(51, 118, 205, 0.3);
+  color: var(--ag-accent);
+  box-shadow: 0 0 8px rgba(51, 118, 205, 0.1);
+}
+
+.status-text {
+  font-size: 12px;
+  color: var(--ag-text-tertiary);
+  line-height: 1.4;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 8px;
 }
 
 .clean-area {
-  margin-top: 16px;
-  padding: 16px;
+  padding: 16px 18px;
   border: 1px solid var(--ag-border);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--ag-surface);
+  background-image: var(--ag-gradient-surface);
+  position: relative;
+  overflow: hidden;
+  animation: card-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
+
+.clean-area::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  pointer-events: none;
 }
 
 .clean-header {
@@ -397,111 +624,194 @@ onMounted(() => {
 }
 
 .clean-title {
-  margin: 0 0 6px 0;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
-}
-
-.clean-desc {
+  color: var(--ag-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   margin: 0;
-  font-size: 12px;
-  color: var(--ag-text-secondary);
 }
 
 .clean-actions {
-  display: flex;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
+/* 主操作按钮 */
 .primary-btn {
-  flex: 1;
-  padding: 14px 24px;
-  background: var(--ag-accent);
+  padding: 12px 16px;
+  background: var(--ag-accent-gradient);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: white;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.primary-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15), transparent);
+  pointer-events: none;
+}
+
+.primary-btn::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  box-shadow: var(--ag-shadow-accent-lg);
+  pointer-events: none;
 }
 
 .primary-btn:hover:not(:disabled) {
-  background: var(--ag-accent-hover);
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.primary-btn:hover:not(:disabled)::after {
+  opacity: 1;
+}
+
+.primary-btn:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.95);
 }
 
 .primary-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
+/* 次级操作按钮 */
 .secondary-btn {
-  padding: 14px 24px;
+  padding: 12px 16px;
   background: var(--ag-surface-2);
   border: 1px solid var(--ag-border);
-  border-radius: 8px;
-  color: var(--ag-text);
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  color: var(--ag-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--transition-fast);
+  text-align: center;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.secondary-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
+  pointer-events: none;
 }
 
 .secondary-btn:hover:not(:disabled) {
-  background: var(--ag-border);
+  background: var(--ag-surface-3);
+  border-color: var(--ag-border-hover);
+  color: var(--ag-text);
+  transform: translateY(-1px);
+}
+
+.secondary-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .secondary-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
-.secondary-btn.danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
-  color: #ef4444;
+/* 危险样式变体 */
+.secondary-btn.danger {
+  color: var(--ag-text-secondary);
 }
 
+.secondary-btn.danger:hover:not(:disabled) {
+  background: var(--ag-error-subtle);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--ag-error);
+}
+
+/* 页脚 */
 .footer {
   margin-top: 24px;
+  padding: 18px 0 8px;
+  border-top: 1px solid var(--ag-border);
   text-align: center;
   font-size: 12px;
-  color: var(--ag-text-secondary);
+  color: var(--ag-text-muted);
 }
 
 .link {
   color: var(--ag-accent);
   text-decoration: none;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 0;
+  height: 1px;
+  background: var(--ag-accent);
+  transition: width var(--transition-fast);
 }
 
 .link:hover {
-  text-decoration: underline;
+  color: var(--ag-accent-hover);
 }
 
-/* Toast 提示样式 */
+.link:hover::after {
+  width: 100%;
+}
+
+/* Toast 提示 */
 .toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--ag-surface);
-  border: 1px solid var(--ag-border);
-  border-radius: 8px;
+  background: var(--ag-glass);
+  border: 1px solid var(--ag-glass-border);
+  border-radius: var(--radius-lg);
   padding: 12px 24px;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--ag-text);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--ag-shadow-xl);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   z-index: 1000;
 }
 
 .toast-enter-active,
 .toast-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(20px);
+  transform: translateX(-50%) translateY(16px) scale(0.94);
 }
 </style>
 

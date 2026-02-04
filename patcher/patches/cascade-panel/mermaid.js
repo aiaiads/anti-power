@@ -55,8 +55,10 @@ const initializeMermaid = () => {
 
 /**
  * 确保 Mermaid 库加载并初始化
+ *
+ * 使用 Promise 缓存避免重复加载（性能优化）。
+ *
  * @returns {Promise<void>}
- * 说明：使用 Promise 缓存避免重复加载（性能优化）
  */
 export const ensureMermaid = () => {
     if (mermaidReadyPromise) return mermaidReadyPromise;
@@ -83,8 +85,9 @@ export const ensureMermaid = () => {
 
 /**
  * 提取 Mermaid 源码
- * @param {Element} codeBlockContainer
- * @returns {string}
+ *
+ * @param {Element} codeBlockContainer - 代码块容器元素
+ * @returns {string} Mermaid 源码
  */
 const extractMermaidSource = (codeBlockContainer) => {
     const codeBlock = codeBlockContainer.querySelector('.code-block');
@@ -100,8 +103,11 @@ const extractMermaidSource = (codeBlockContainer) => {
 };
 
 /**
- * 原地渲染 Mermaid 图表（保留原代码块并插入渲染容器）
- * @param {Element} codeBlockContainer
+ * 原地渲染 Mermaid 图表
+ *
+ * 保留原代码块并插入渲染容器。
+ *
+ * @param {Element} codeBlockContainer - 代码块容器元素
  * @returns {Promise<void>}
  */
 export const renderMermaid = async (codeBlockContainer) => {

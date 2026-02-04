@@ -1,5 +1,12 @@
-// 完整版: Hook fetch 请求, 收集 StreamCascadeReactiveUpdates 的二进制数据.
-// 使用方法: 在浏览器控制台粘贴执行, 然后切换或重新加载对话.
+/**
+ * Hook Fetch 请求脚本
+ *
+ * 收集 StreamCascadeReactiveUpdates 的二进制数据用于分析。
+ * CDP 无法获取历史日志，此脚本主要用于实时监听。
+ *
+ * 使用方法:
+ * 在浏览器控制台粘贴执行，然后切换或重新加载对话。
+ */
 
 (function () {
     console.log('[Hook] 开始监听...');

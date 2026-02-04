@@ -14,7 +14,13 @@ const DEFAULT_CONFIG = {
     fontSize: 20,
 };
 
-// 加载配置
+/**
+ * 加载配置文件
+ *
+ * 从 config.json 读取用户配置，失败时返回默认配置。
+ *
+ * @returns {Promise<Object>} 配置对象
+ */
 const loadConfig = async () => {
     try {
         const res = await fetch('./cascade-panel/config.json', { cache: 'no-store' });
@@ -32,7 +38,14 @@ const loadConfig = async () => {
     }
 };
 
-// 应用字体大小配置
+/**
+ * 应用字体大小配置
+ *
+ * 设置 CSS 变量 --cascade-panel-font-size。
+ *
+ * @param {Object} userConfig - 用户配置对象
+ * @returns {void}
+ */
 const applyFontSize = (userConfig) => {
     const root = document.documentElement;
     if (!root) return;
@@ -51,14 +64,22 @@ const applyFontSize = (userConfig) => {
     root.style.setProperty('--cascade-panel-font-size', `${size}px`);
 };
 
-// 动态加载表格修复样式
+/**
+ * 动态加载表格修复样式
+ *
+ * @returns {void}
+ */
 const loadTableFix = () => {
     void loadStyle('./cascade-panel/table-fix.css').catch((error) => {
         console.warn('[Cascade] 表格样式加载失败:', error);
     });
 };
 
-// 入口
+/**
+ * 补丁入口
+ *
+ * 加载配置并启动扫描模块。
+ */
 (async () => {
     const config = await loadConfig();
 

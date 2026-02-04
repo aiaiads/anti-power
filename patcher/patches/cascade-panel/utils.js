@@ -31,9 +31,11 @@ const waitForResource = (el, url, cache, label) =>
 
 /**
  * 动态加载样式表
+ *
+ * 重复 URL 会复用已有 link，避免重复请求（性能优化）。
+ *
  * @param {string} href - 样式表 URL
  * @returns {Promise<void>} 加载完成后 resolve
- * 说明：重复 URL 会复用已有 link，避免重复请求（性能优化）
  */
 export const loadStyle = (href) => {
     if (!href) return Promise.reject(new Error('Missing stylesheet URL'));
@@ -65,9 +67,11 @@ export const loadStyle = (href) => {
 
 /**
  * 动态加载脚本
+ *
+ * 重复 URL 会复用已有 script，避免重复请求（性能优化）。
+ *
  * @param {string} src - 脚本 URL
  * @returns {Promise<void>} 加载完成后 resolve
- * 说明：重复 URL 会复用已有 script，避免重复请求（性能优化）
  */
 export const loadScript = (src) => {
     if (!src) return Promise.reject(new Error('Missing script URL'));
@@ -99,17 +103,22 @@ export const loadScript = (src) => {
 
 /**
  * 判断元素是否位于可编辑上下文中
- * @param {Element} el
+ *
+ * 仅检查最近的可编辑祖先，避免误伤输入区域。
+ *
+ * @param {Element} el - 目标元素
  * @returns {boolean} true 表示应跳过处理
- * 边界：仅检查最近的可编辑祖先，避免误伤输入区域
  */
 export const isEditable = (el) =>
     !!el.closest('[contenteditable="true"], textarea, input');
 
 /**
- * 安全读取 className（兼容 SVGAnimatedString）
- * @param {Element} el
- * @returns {string}
+ * 安全读取 className
+ *
+ * 兼容 SVGAnimatedString 类型。
+ *
+ * @param {Element} el - 目标元素
+ * @returns {string} 类名字符串
  */
 export const getClassString = (el) => {
     const className = el?.className || '';
@@ -119,10 +128,13 @@ export const getClassString = (el) => {
 };
 
 /**
- * 写入剪贴板，优先使用 Clipboard API，失败则降级到 execCommand
- * @param {string} text
+ * 写入剪贴板
+ *
+ * 优先使用 Clipboard API，失败则降级到 execCommand。
+ * 无文本直接返回 false；部分浏览器可能要求用户手势。
+ *
+ * @param {string} text - 待写入的文本
  * @returns {Promise<boolean>} true 表示成功写入
- * 边界：无文本直接返回 false；部分浏览器可能要求用户手势
  */
 export const writeClipboard = async (text) => {
     if (!text) return false;
@@ -132,7 +144,7 @@ export const writeClipboard = async (text) => {
             await navigator.clipboard.writeText(text);
             return true;
         } catch {
-            // execCommand fallback
+            // 降级到 execCommand
         }
     }
 
@@ -151,10 +163,13 @@ export const writeClipboard = async (text) => {
 };
 
 /**
- * 捕获原始文本，避免数学渲染后丢失原始内容
- * @param {Element} contentEl
+ * 捕获原始文本
+ *
+ * 避免数学渲染后丢失原始内容。
+ * 已标记为数学渲染时不重复写入，避免覆盖原始文本。
+ *
+ * @param {Element} contentEl - 内容元素
  * @returns {void}
- * 边界：已标记为数学渲染时不重复写入，避免覆盖原始文本
  */
 export const captureRawText = (contentEl) => {
     if (!contentEl) return;

@@ -82,7 +82,7 @@ const getTrustedTypesPolicy = () => {
                 });
                 return cachedPolicy;
             } catch {
-                // Try next policy name.
+                // 尝试下一个 policy 名称
             }
         }
     }
@@ -116,8 +116,12 @@ const createTrustedHTML = (html, policy) => {
 
 /**
  * 在 Trusted Types 环境下安全执行 DOM 操作
+ *
+ * 临时 patch innerHTML 和 insertAdjacentHTML，执行完成后恢复原始方法。
+ *
  * @param {Function} fn - 要执行的函数
- * @param {Object} externalPolicy - 可选的外部 policy 对象
+ * @param {Object} [externalPolicy] - 可选的外部 policy 对象
+ * @returns {Promise<*>} 执行函数的返回值
  */
 export const withTrustedHTML = async (fn, externalPolicy = null) => {
     const policy = externalPolicy || getTrustedTypesPolicy();
@@ -220,7 +224,7 @@ const suspendAmd = () => {
                 window.define = undefined;
                 amdSnapshot.defineReplaced = true;
             } catch {
-                // Ignore if define is not writable.
+                // 忽略 define 不可写的情况
             }
         }
     }
@@ -238,13 +242,13 @@ const suspendAmd = () => {
                 try {
                     window.define = amdSnapshot.defineFn;
                 } catch {
-                    // Ignore restore errors.
+                    // 忽略恢复错误
                 }
             }
             try {
                 amdSnapshot.defineFn.amd = amdSnapshot.amd;
             } catch {
-                // Ignore restore errors.
+                // 忽略恢复错误
             }
             amdSnapshot = null;
         }
@@ -253,8 +257,11 @@ const suspendAmd = () => {
 
 /**
  * 动态加载 CSS
- * @param {string} href
- * @returns {Promise<void>}
+ *
+ * 重复 URL 会复用已有 link，避免重复请求。
+ *
+ * @param {string} href - 样式表 URL
+ * @returns {Promise<void>} 加载完成后 resolve
  */
 export const loadStyle = (href) => {
     return new Promise((resolve, reject) => {
@@ -273,8 +280,12 @@ export const loadStyle = (href) => {
 
 /**
  * 动态加载 JS
- * @param {string} src
- * @returns {Promise<void>}
+ *
+ * 重复 URL 会复用已有 script，避免重复请求。
+ * 支持 Trusted Types 和 AMD 加载器暂停。
+ *
+ * @param {string} src - 脚本 URL
+ * @returns {Promise<void>} 加载完成后 resolve
  */
 export const loadScript = (src) => {
     return new Promise((resolve, reject) => {
@@ -308,8 +319,9 @@ const getConfig = () => {
 
 /**
  * 根据配置获取按钮标签文字
+ *
  * @param {'top'|'bottom'} position - 按钮位置
- * @returns {string}
+ * @returns {string} 按钮标签文字
  */
 const getButtonLabel = (position) => {
     const config = getConfig();
@@ -366,8 +378,10 @@ const createCheckIcon = () => {
 
 /**
  * 设置复制按钮状态
- * @param {HTMLElement} btn
- * @param {boolean} copied
+ *
+ * @param {HTMLElement} btn - 复制按钮元素
+ * @param {boolean} copied - 是否已复制
+ * @returns {void}
  */
 export const setCopyState = (btn, copied) => {
     if (!btn) return;
@@ -381,9 +395,10 @@ export const setCopyState = (btn, copied) => {
 
 /**
  * 创建复制按钮元素
- * @param {string} className
+ *
+ * @param {string} className - 按钮类名
  * @param {'top'|'bottom'} [position='top'] - 按钮位置
- * @returns {HTMLButtonElement}
+ * @returns {HTMLButtonElement} 创建的按钮元素
  */
 export const createCopyButton = (className, position = 'top') => {
     const btn = document.createElement('button');
@@ -412,15 +427,18 @@ export const createCopyButton = (className, position = 'top') => {
 
 /**
  * 复制文本到剪贴板
- * @param {string} text
- * @returns {Promise<boolean>}
+ *
+ * 优先使用 Clipboard API，失败则降级到 execCommand。
+ *
+ * @param {string} text - 待复制的文本
+ * @returns {Promise<boolean>} true 表示复制成功
  */
 export const copyToClipboard = async (text) => {
     try {
         await navigator.clipboard.writeText(text);
         return true;
     } catch {
-        // Fallback
+        // 降级到 execCommand
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
@@ -435,7 +453,11 @@ export const copyToClipboard = async (text) => {
 
 /**
  * 显示复制成功反馈
- * @param {HTMLElement} btn
+ *
+ * 设置按钮为复制成功状态，1.5 秒后恢复。
+ *
+ * @param {HTMLElement} btn - 复制按钮元素
+ * @returns {void}
  */
 export const showCopySuccess = (btn) => {
     setCopyState(btn, true);

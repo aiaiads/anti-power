@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Usage:
+# 使用方法：
 # 1. chmod +x ./anti-power.sh
 # 2. sudo ./anti-power.sh
 #
-# This script supports both macOS and Linux:
+# 本脚本支持 macOS 和 Linux：
 # - macOS: /Applications/Antigravity.app/Contents/Resources/app
 # - Linux: /usr/share/antigravity/resources/app
 

@@ -20,8 +20,11 @@ import { captureRawText, isEditable, writeClipboard } from './utils.js';
 const copyTimers = new WeakMap();
 
 /**
- * 获取配置（从全局变量读取）
- * @returns {Object}
+ * 获取配置
+ *
+ * 从全局变量读取。
+ *
+ * @returns {Object} 配置对象
  */
 const getConfig = () => {
     return window.__CASCADE_CONFIG__ || {};
@@ -29,9 +32,10 @@ const getConfig = () => {
 
 /**
  * 根据配置获取按钮标签文字
+ *
  * @param {boolean} copied - 是否已复制
  * @param {'top'|'bottom'} position - 按钮位置
- * @returns {string}
+ * @returns {string} 按钮标签文字
  */
 const getLabelText = (copied, position) => {
     if (copied) return 'Copied!';
@@ -55,9 +59,10 @@ const getLabelText = (copied, position) => {
 
 /**
  * 生成按钮内部文本与图标的 HTML
- * @param {string} label
- * @param {string} icon
- * @returns {string}
+ *
+ * @param {string} label - 标签文字
+ * @param {string} icon - 图标 SVG 字符串
+ * @returns {string} HTML 字符串
  */
 const buttonMarkup = (label, icon) => {
     if (label) {
@@ -68,8 +73,9 @@ const buttonMarkup = (label, icon) => {
 
 /**
  * 设置复制按钮的状态与可访问性标签
- * @param {HTMLElement} button
- * @param {boolean} copied
+ *
+ * @param {HTMLElement} button - 复制按钮元素
+ * @param {boolean} copied - 是否已复制
  * @returns {void}
  */
 export const setCopyState = (button, copied) => {
@@ -91,12 +97,14 @@ export const setCopyState = (button, copied) => {
 
 /**
  * 创建复制按钮元素
- * @param {Object} [options]
+ *
+ * 当 tag 不是 button 时不会设置 type，而是设置 role 和 tabIndex。
+ *
+ * @param {Object} [options] - 配置选项
  * @param {string} [options.className] - 额外类名
  * @param {string} [options.tag='button'] - 使用的标签名
  * @param {'top'|'bottom'} [options.position='top'] - 按钮位置
- * @returns {HTMLElement}
- * 边界：当 tag 不是 button 时不会设置 type
+ * @returns {HTMLElement} 创建的按钮元素
  */
 export const createCopyButton = ({ className, tag = 'button', position = 'top' } = {}) => {
     const button = document.createElement(tag);
@@ -117,12 +125,13 @@ export const createCopyButton = ({ className, tag = 'button', position = 'top' }
 
 /**
  * 绑定复制逻辑到按钮
- * @param {HTMLElement} button
- * @param {Object} options
+ *
+ * @param {HTMLElement} button - 复制按钮元素
+ * @param {Object} options - 配置选项
  * @param {() => (string|Promise<string>)} options.getText - 获取待复制文本
  * @param {number} [options.copiedDuration=1200] - 成功状态保持时间
- * @param {boolean} [options.preventDefault=true]
- * @param {boolean} [options.stopPropagation=true]
+ * @param {boolean} [options.preventDefault=true] - 是否阻止默认行为
+ * @param {boolean} [options.stopPropagation=true] - 是否阻止事件冒泡
  * @param {() => void} [options.onMissing] - 无内容时回调
  * @param {() => void} [options.onCopyFailed] - 复制失败回调
  * @returns {void}
@@ -186,10 +195,14 @@ export const bindCopyButton = (
 };
 
 /**
- * 绑定智能感应事件（鼠标在按钮附近才显示）
+ * 绑定智能感应事件
+ *
+ * 鼠标在按钮附近才显示按钮。
+ *
  * @param {HTMLElement} contentEl - 内容容器
  * @param {HTMLElement} topBtn - 右上角按钮
- * @param {HTMLElement} bottomBtn - 右下角按钮（可选）
+ * @param {HTMLElement} [bottomBtn] - 右下角按钮（可选）
+ * @returns {void}
  */
 const bindSmartHover = (contentEl, topBtn, bottomBtn) => {
     contentEl.addEventListener('mousemove', (e) => {
@@ -224,9 +237,11 @@ const bindSmartHover = (contentEl, topBtn, bottomBtn) => {
 
 /**
  * 为内容区添加复制按钮并绑定处理逻辑
- * @param {Element} contentEl
+ *
+ * 可编辑区域与已绑定节点会跳过，避免重复渲染。
+ *
+ * @param {Element} contentEl - 内容容器元素
  * @returns {void}
- * 边界：可编辑区域与已绑定节点会跳过，避免重复渲染
  */
 export const ensureContentCopyButton = (contentEl) => {
     if (!contentEl || isEditable(contentEl)) return;
@@ -277,9 +292,11 @@ export const ensureContentCopyButton = (contentEl) => {
 };
 
 /**
- * 为反馈区域插入复制按钮（向上回溯查找消息内容）
+ * 为反馈区域插入复制按钮
+ *
+ * 向上回溯查找消息内容，最多遍历 20 层，避免深层 DOM 导致性能问题。
+ *
  * @returns {void}
- * 说明：最多向上遍历 20 层，避免深层 DOM 导致性能问题
  */
 export const addFeedbackCopyButtons = () => {
     const feedbackContainers = document.querySelectorAll('[data-tooltip-id^="up-"]');

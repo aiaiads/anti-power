@@ -12,7 +12,8 @@
 | 前端显示 | `patcher/src/App.vue` -> `APP_VERSION` |
 | README 版本徽章 | `README.md` -> 顶部版本号徽章 |
 | README_EN 版本徽章 | `README_EN.md` -> 顶部版本号徽章 |
-| 更新日志 | `CHANGELOG.md` -> 添加新版本记录 |
+| 更新日志 | `CHANGELOG.md` / `CHANGELOG_EN.md` -> 添加新版本记录 |
+| Release 说明 | `release-notes.md` -> 更新发布说明 |
 
 ---
 
@@ -20,7 +21,7 @@
 
 ### 1. 更新版本号
 
-按上表同步所有文件中的版本号。
+按上表同步所有文件中的版本号.
 
 ### 2. 编写发布说明
 
@@ -39,7 +40,7 @@
 ## 安装
 - **Windows**: 下载 `anti-power-windows.exe`
 - **macOS (Universal)**: 下载 `anti-power-macos-universal.dmg`
-- **Linux**: 下载 `anti-power-linux.AppImage` 或 `.deb`
+- **Linux**: 下载 `anti-power-linux.AppImage`
 - **手动安装**: 下载 `anti-power-patches.zip`
 ```
 
@@ -52,29 +53,29 @@ git commit -m "release: vX.Y.Z"
 
 # 创建标签并推送
 git tag vX.Y.Z
-git push origin master
+git push origin main
 git push origin vX.Y.Z
 ```
 
 ### 4. 等待 CI 自动构建
 
-推送 tag 后，GitHub Actions 会自动:
-1. 在 Windows、macOS、Linux 三平台并行编译
+推送 tag 后, GitHub Actions 会自动:
+1. 在 Windows, macOS, Linux 三平台并行编译
 2. 生成补丁压缩包
 3. 创建 GitHub Release 并上传所有产物
 
-你可以在仓库的 **Actions** 页面查看构建进度。
+你可以在仓库的 **Actions** 页面查看构建进度.
 
 ### 5. 完善 Release 说明 (可选)
 
-CI 创建的 Release 使用 `release-notes.md` 的内容。
-如需修改，可在 GitHub Release 页面直接编辑。
+CI 创建的 Release 使用 `release-notes.md` 的内容.
+如需修改, 可在 GitHub Release 页面直接编辑.
 
 ---
 
 ## 手动构建 (本地调试用)
 
-如需在本地编译，仍可使用以下命令:
+如需在本地编译, 仍可使用以下命令:
 
 ```powershell
 cd patcher
@@ -118,12 +119,12 @@ Compress-Archive -Path patcher\patches\* -DestinationPath anti-power-patches.zip
 
 1. 查看 Actions 页面的错误日志
 2. 常见问题:
-   - 依赖安装失败：检查 `package.json` 和 `Cargo.toml`
-   - 签名问题：macOS 构建可能需要配置签名证书（当前跳过签名）
+   - 依赖安装失败: 检查 `package.json` 和 `Cargo.toml`
+   - 签名问题: macOS 构建可能需要配置签名证书 (当前跳过签名)
 
 ### 手动发布
 
-如 CI 不可用，参考旧版流程手动发布:
+如 CI 不可用, 参考旧版流程手动发布:
 
 ```powershell
 # 1. 本地编译

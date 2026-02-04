@@ -26,6 +26,11 @@ const DEFAULT_CONFIG = {
 
 /**
  * 动态加载 CSS
+ *
+ * 重复 URL 会复用已有 link，避免重复请求。
+ *
+ * @param {string} href - 样式表相对路径
+ * @returns {Promise<void>} 加载完成后 resolve
  */
 const loadStyle = (href) => {
     return new Promise((resolve, reject) => {
@@ -44,7 +49,11 @@ const loadStyle = (href) => {
 };
 
 /**
- * 加载配置
+ * 加载配置文件
+ *
+ * 从 config.json 读取用户配置，失败时返回默认配置。
+ *
+ * @returns {Promise<Object>} 配置对象
  */
 const loadConfig = async () => {
     try {
@@ -64,7 +73,12 @@ const loadConfig = async () => {
 };
 
 /**
- * 应用字体大小
+ * 应用字体大小配置
+ *
+ * 设置 CSS 变量 --manager-panel-font-size。
+ *
+ * @param {Object} userConfig - 用户配置对象
+ * @returns {void}
  */
 const applyFontSize = (userConfig) => {
     const root = document.documentElement;
@@ -86,6 +100,11 @@ const applyFontSize = (userConfig) => {
 
 /**
  * 应用对话区域最大宽度
+ *
+ * 设置 CSS 变量 --manager-panel-max-width-ratio。
+ *
+ * @param {Object} userConfig - 用户配置对象
+ * @returns {void}
  */
 const applyMaxWidth = (userConfig) => {
     const root = document.documentElement;
@@ -110,7 +129,9 @@ const applyMaxWidth = (userConfig) => {
 };
 
 /**
- * 入口
+ * 补丁入口
+ *
+ * 加载样式和配置，并启动扫描模块。
  */
 (async () => {
     console.log('[Manager Panel] 补丁加载中...');
