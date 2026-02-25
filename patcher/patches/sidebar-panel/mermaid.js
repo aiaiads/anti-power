@@ -47,8 +47,8 @@ const ensureMermaidPolicy = () => {
     const tt = window.trustedTypes;
     if (!tt?.createPolicy) return null;
 
-    // 尝试使用 CSP 中允许的 policy 名称（managerPanel 是我们专门添加的）
-    const policyNames = ['managerPanel', 'dompurifyMermaid', 'mermaid', 'dompurify'];
+    // 尝试使用 CSP 中允许的 policy 名称（sidebarPanel 是我们专门添加的）
+    const policyNames = ['sidebarPanel', 'dompurifyMermaid', 'mermaid', 'dompurify'];
     for (const name of policyNames) {
         try {
             mermaidPolicy = tt.createPolicy(name, {
@@ -73,31 +73,36 @@ const ensureMermaidPolicy = () => {
  */
 const ensureMermaid = async () => {
     if (mermaidLoaded) return true;
-    if (mermaidLoading) return mermaidLoading;
+    if (!mermaidLoading) {
+        mermaidLoading = (async () => {
+            try {
+                // 在加载 Mermaid 前尝试创建 Trusted Types policy
+                ensureMermaidPolicy();
 
-    mermaidLoading = (async () => {
-        try {
-            // 在加载 Mermaid 前尝试创建 Trusted Types policy
-            ensureMermaidPolicy();
-
-            await loadScript(MERMAID_URL);
-            if (window.mermaid) {
-                window.mermaid.initialize({
-                    startOnLoad: false,
-                    theme: 'dark',
-                    securityLevel: 'loose',
-                });
-                mermaidLoaded = true;
-                return true;
+                await loadScript(MERMAID_URL);
+                if (window.mermaid) {
+                    window.mermaid.initialize({
+                        startOnLoad: false,
+                        theme: 'dark',
+                        securityLevel: 'loose',
+                    });
+                    mermaidLoaded = true;
+                    return true;
+                }
+                return false;
+            } catch (err) {
+                console.warn('[Sidebar] Mermaid 加载失败:', err);
+                return false;
             }
-            return false;
-        } catch (err) {
-            console.warn('[Sidebar] Mermaid 加载失败:', err);
-            return false;
-        }
-    })();
+        })();
+    }
 
-    return mermaidLoading;
+    const loaded = await mermaidLoading;
+    if (!loaded) {
+        // 失败不缓存，允许后续渲染触发时重试
+        mermaidLoading = null;
+    }
+    return loaded;
 };
 
 /**
@@ -218,47 +223,25 @@ const resolveHideTarget = (codeBlock) => {
  * @returns {Promise<void>}
  */
 export const renderMermaid = async (el) => {
-    console.log('[Sidebar DEBUG] renderMermaid called', { elTag: el?.tagName, elClass: el?.className?.slice?.(0, 50) });
     const codeBlock = resolveCodeBlock(el);
-    if (!codeBlock) {
-        console.log('[Sidebar DEBUG] renderMermaid: no codeBlock found');
-        return;
-    }
+    if (!codeBlock) return;
 
     const source = extractMermaidSource(codeBlock);
-    if (!isMermaidSource(source)) {
-        console.log('[Sidebar DEBUG] renderMermaid: not mermaid source', { sourcePreview: source.slice(0, 50) });
-        return;
-    }
-
-    console.log('[Sidebar DEBUG] renderMermaid: mermaid source detected', { sourceLen: source.length });
+    if (!isMermaidSource(source)) return;
 
     const previousSource = codeBlock[MERMAID_SOURCE_PROP] || '';
     const isRendered = codeBlock.getAttribute(MERMAID_ATTR) === '1';
     const contentChanged = previousSource && previousSource !== source;
     const errorSource = codeBlock[MERMAID_ERROR_PROP] || '';
 
-    console.log('[Sidebar DEBUG] renderMermaid state', { isRendered, contentChanged, hasErrorSource: !!errorSource });
+    if (isRendered && !contentChanged) return;
+    if (!isRendered && !contentChanged && errorSource === source) return;
+    if (codeBlock[MERMAID_RENDERING_PROP]) return;
 
-    if (isRendered && !contentChanged) {
-        console.log('[Sidebar DEBUG] renderMermaid: already rendered, skipping');
-        return;
-    }
-    if (!isRendered && !contentChanged && errorSource === source) {
-        console.log('[Sidebar DEBUG] renderMermaid: error source matches, skipping');
-        return;
-    }
-    if (codeBlock[MERMAID_RENDERING_PROP]) {
-        console.log('[Sidebar DEBUG] renderMermaid: already rendering, skipping');
-        return;
-    }
-
-    console.log('[Sidebar DEBUG] renderMermaid: starting render');
     codeBlock[MERMAID_SOURCE_PROP] = source;
     codeBlock[MERMAID_RENDERING_PROP] = true;
 
     const loaded = await ensureMermaid();
-    console.log('[Sidebar DEBUG] renderMermaid: mermaid loaded', { loaded, hasMermaid: !!window.mermaid });
     if (!loaded || !window.mermaid) {
         delete codeBlock[MERMAID_RENDERING_PROP];
         return;
@@ -294,34 +277,10 @@ export const renderMermaid = async (el) => {
             codeBlock.parentNode.insertBefore(container, codeBlock);
         }
 
-        // 详细日志：渲染前的状态
-        console.log('[Sidebar DEBUG] before mermaid.render', {
-            containerId: container.id,
-            containerConnected: container.isConnected,
-            containerDisplay: container.style.display,
-            containerRect: container.getBoundingClientRect ? JSON.stringify(container.getBoundingClientRect()) : 'N/A',
-            sourceLength: source.length,
-            sourcePreview: source.slice(0, 100),
-            renderId,
-        });
-
-        let renderResult;
-        try {
-            renderResult = await withTrustedHTML(
-                () => window.mermaid.render(renderId, source, container),
-                mermaidPolicy
-            );
-            console.log('[Sidebar DEBUG] mermaid.render succeeded', {
-                svgLength: renderResult?.svg?.length,
-            });
-        } catch (renderErr) {
-            console.log('[Sidebar DEBUG] mermaid.render failed', {
-                error: renderErr.message,
-                containerConnected: container.isConnected,
-                containerRect: container.getBoundingClientRect ? JSON.stringify(container.getBoundingClientRect()) : 'N/A',
-            });
-            throw renderErr;
-        }
+        const renderResult = await withTrustedHTML(
+            () => window.mermaid.render(renderId, source, container),
+            mermaidPolicy
+        );
 
         const { svg, bindFunctions } = renderResult;
 
@@ -379,7 +338,6 @@ export const renderMermaid = async (el) => {
  * @returns {void}
  */
 export const scanMermaid = (root) => {
-    console.log('[Sidebar DEBUG] scanMermaid called', { rootTag: root?.tagName, rootClass: root?.className?.slice?.(0, 50) });
     if (!root) return;
 
     const codeBlocks = [];
@@ -387,7 +345,6 @@ export const scanMermaid = (root) => {
         codeBlocks.push(root);
     }
     codeBlocks.push(...root.querySelectorAll('.code-block'));
-    console.log('[Sidebar DEBUG] scanMermaid found codeBlocks', { count: codeBlocks.length });
     codeBlocks.forEach((block) => {
         scheduleMermaidRender(block);
     });

@@ -451,34 +451,44 @@ export const createCopyButton = (className, position = 'top') => {
  * @returns {Promise<boolean>} true 表示复制成功
  */
 export const copyToClipboard = async (text) => {
-    try {
-        await navigator.clipboard.writeText(text);
-        return true;
-    } catch {
-        // 降级到 execCommand
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        const success = document.execCommand('copy');
-        document.body.removeChild(textarea);
-        return success;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch {
+            // 降级到 execCommand
+        }
     }
+    // 降级到 execCommand
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const success = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return success;
 };
+
+const copySuccessTimers = new WeakMap();
 
 /**
  * 显示复制成功反馈
  *
  * 设置按钮为复制成功状态，1.5 秒后恢复。
+ * 使用 WeakMap 去重定时器，避免快速连续点击导致视觉闪烁。
  *
  * @param {HTMLElement} btn - 复制按钮元素
  * @returns {void}
  */
 export const showCopySuccess = (btn) => {
     setCopyState(btn, true);
-    setTimeout(() => {
+    const existingTimer = copySuccessTimers.get(btn);
+    if (existingTimer) clearTimeout(existingTimer);
+    const timerId = setTimeout(() => {
         setCopyState(btn, false);
+        copySuccessTimers.delete(btn);
     }, 1500);
+    copySuccessTimers.set(btn, timerId);
 };
